@@ -266,7 +266,6 @@ def sort_by(sortstr, nl, reverse=False):
 
 import csv
 import json
-import StringIO
 
 
 class ResultWriter(object):
@@ -430,7 +429,10 @@ http://localhost/path/to/file?query#fragment
 """
 import tempfile
 import os
-import StringIO
+try:
+    import StringIO as io
+except ImportError:
+    import io
 import unittest
 
 
@@ -456,7 +458,7 @@ class TestPyline(unittest.TestCase):
         )
         _test_output = sys.stdout
         for test in PYLINE_TESTS:
-            for line in pyline(StringIO.StringIO(TEST_INPUT), **test):
+            for line in pyline(io.StringIO(TEST_INPUT), **test):
                 print(line, file=_test_output)
 
     def test_pyline_cmdline(self):
