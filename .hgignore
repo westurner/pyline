@@ -1,3 +1,4 @@
+syntax:glob
 *.py[cod]
 
 # C extensions
@@ -47,3 +48,5 @@ output/*/index.html
 
 # Sphinx
 docs/_build
+
+
