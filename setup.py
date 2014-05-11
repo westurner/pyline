@@ -1,14 +1,32 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import logging
 import os
+import subprocess
 import sys
 
 
 try:
-    from setuptools import setup
+    from setuptools import setup, Command
 except ImportError:
-    from distutils.core import setup
+    from distutils.core import setup, Command
+
+CONFIG = {}
+DEBUG = CONFIG.get('debug', True)  # False # True
+
+logging.basicConfig(
+    format='%(asctime)s %(name)s %(levelname)-5s %(message)s')
+log = logging.getLogger()
+
+if DEBUG:
+    log.setLevel(logging.DEBUG)
+else:
+    log.setLevel(logging.INFO)
+
+SETUPPY_PATH = os.path.dirname(os.path.abspath(__file__)) or '.'
+log.debug('SETUPPY_PATH: %s' % SETUPPY_PATH)
+
 
 if sys.argv[-1] == 'publish':
     os.system('python setup.py sdist upload')
@@ -16,6 +34,31 @@ if sys.argv[-1] == 'publish':
 
 readme = open('README.rst').read()
 history = open('HISTORY.rst').read().replace('.. :changelog:', '')
+
+
+class PyTestCommand(Command):
+    user_options = []
+    description = "<TODO>"
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        cmd = [sys.executable,
+               os.path.join(SETUPPY_PATH, 'runtests.py'),
+               '-v']
+        cmd.extend([
+            os.path.join(SETUPPY_PATH, 'pyline/pyline.py'),
+        ])
+
+        cmdstr = ' '.join(cmd)
+        log.info(cmdstr)
+
+        errno = subprocess.call(cmd)
+        raise SystemExit(errno)
 
 setup(
     name='pyline',
@@ -53,4 +96,7 @@ setup(
         ]
     },
     test_suite='tests',
+    cmdclass={
+        'test': PyTestCommand,
+    }
 )
