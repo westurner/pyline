@@ -2,12 +2,8 @@
 Credits
 =======
 
-Development Lead
-----------------
+* Graham Fawcett  
+* Jacob Oscarson
+* Mark Eichin
+* Wes Turner -- https://github.com/westurner
 
-* Wes Turner <wes@wrd.nu>
-
-Contributors
-------------
-
-None yet. Why not be the first?

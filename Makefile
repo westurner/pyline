@@ -45,7 +45,7 @@ docs:
 	sphinx-apidoc -o docs/ pyline
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
-	open docs/_build/html/index.html
+	#open docs/_build/html/index.html
 
 release: clean
 	python setup.py sdist upload
@@ -55,3 +55,10 @@ dist: clean
 	python setup.py sdist
 	python setup.py bdist_wheel
 	ls -l dist
+
+docs_rsync_to_local:
+	rsync -avr ./docs/_build/html/ $(_DOCSHTML)/pyline
+
+docs_rebuild:
+	$(MAKE) docs
+	$(MAKE) docs_rsync_to_local

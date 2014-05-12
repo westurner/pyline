@@ -2,22 +2,164 @@
 pyline
 ===============================
 
-.. .. image:: https://badge.fury.io/py/pyline.png
-..    :target: http://badge.fury.io/py/pyline
+
+`GitHub`_ |
+`PyPi`_ |
+`Warehouse`_ |
+`ReadTheDocs`_ |
+`Travis-CI`_
+
+
+.. image:: https://badge.fury.io/py/pyline.png
+   :target: http://badge.fury.io/py/pyline
     
 .. image:: https://travis-ci.org/westurner/pyline.png?branch=master
         :target: https://travis-ci.org/westurner/pyline
 
-.. .. image:: https://pypip.in/d/pyline/badge.png
-..        :target: https://pypi.python.org/pypi/pyline
+.. image:: https://pypip.in/d/pyline/badge.png
+       :target: https://pypi.python.org/pypi/pyline
 
+.. _GitHub: https://github.com/westurner/pyline
+.. _PyPi: https://pypi.python.org/pypi/pyline
+.. _Warehouse: https://warehouse.python.org/project/pyline
+.. _ReadTheDocs:  https://pyline.readthedocs.org/en/latest
+.. _Travis-CI:  https://travis-ci.org/westurner/pylin
 
-A tool for line-based processing in Python.
+Pyline: a grep-like, sed-like command-line tool (Python package)
 
-* Free software: BSD license
-* Documentation: http://pyline.rtfd.org.
 
 Features
---------
+==========
 
-* TODO
+* Compatibility with the `original Pyline recipe`_
+* Python `str.split`_ by an optional delimiter str (``-F``, ``--input-delim``)
+* `Python regex`_ (``-r``, ``--regex``, ``-R``, ``--regex-options``)
+* Output as TXT, CSV, TSV, JSON (``-O``, ``-output-filetype``)
+* Lazy sorting (``-s``, ``--sort-asc``; ``-S``, ``--sort-desc``)
+* Create `path.py`_ (or `pathlib`_) objects from each line (``-p``,
+  ``--path-tools``)
+* Functional `namedtuples`_, `iterators`_ ``yield`` -ing `generators`_
+* `optparse`_ argument parsing (``-h``, ``--help``)
+* `cookiecutter-pypackage`_ project templating  
+
+
+.. _path.py: https://pypi.python.org/pypi/path.py
+.. _str.split: https://docs.python.org/2/library/stdtypes.html#str.split
+.. _Python regex: https://docs.python.org/2/library/re.html   
+.. _pathlib: https://pypi.python.org/pypi/pathlib
+.. _namedtuples: https://docs.python.org/2/library/collections.html#collections.namedtuple 
+.. _iterators: https://docs.python.org/2/howto/functional.html#iterators
+.. _generators: https://docs.python.org/2/howto/functional.html#generators    
+.. _optparse: https://docs.python.org/2/library/optparse.html 
+.. _cookiecutter-pypackage: https://github.com/audreyr/cookiecutter-pypackage 
+
+
+Why
+=====
+Somewhat unsurprisingly, I found the `original Pyline recipe`_
+while searching for "python grep sed"
+(see ``AUTHORS.rst`` and ``LICENSE.psf``).
+
+I added an option for setting ``p = path.path(line)`` (with `path.py`_)
+in the `eval`_/`compile`_ command context and `added it to my dotfiles
+<https://github.com/westurner/dotfiles/commits/master/src/dotfiles/pyline.py>`_
+; where it grew tests and an ``optparse.OptionParser``; and is now
+promoted to a `GitHub`_ project with `ReadTheDocs`_ documentation,
+tests with tox and `Travis-CI`, and a setup.py for `PyPi`_.
+
+
+Pyline is an ordered `MapReduce`_ tool:
+
+Input Reader:
+    file, stdin (default)
+
+Map Function:
+    python command string, modules, regex, path tools
+
+Partition Function:
+    none
+
+Compare Function:
+    ``Result(collections.namedtuple).__cmp__``
+
+Reduce Function:
+    ``bool() and sorted()``
+
+Output Writer:
+    ``ResultWriter`` classes
+
+
+.. _original Pyline recipe: https://code.activestate.com/recipes/437932-pyline-a-grep-like-sed-like-command-line-tool/
+.. _path.py: https://pythonhosted.org/path.py/api.htm
+.. _eval: https://docs.python.org/2/library/functions.html#eval
+.. _compile: https://docs.python.org/2/library/functions.html#compile   
+.. _MapReduce: https://en.wikipedia.org/wiki/MapReduce
+
+
+Installing
+============
+Install from `PyPi`_::
+
+    pip install pyline
+
+Install from `GitHub`_ as editable (add a ``pyline.pth`` in ``site-packages``)::
+
+    pip install -e git+https://github.com/westurner/pyline#egg=pyline
+
+
+Usage
+=========
+
+Print help::
+
+    pyline --help
+
+Process::
+
+    # Print every line (null transform)
+    cat ~/.bashrc | pyline line
+    cat ~/.bashrc | pyline l
+
+    # Number every line
+    cat ~/.bashrc | pyline -n l
+
+    # Print every word (str.split(input-delim=None))
+    cat ~/.bashrc | pyline words
+    cat ~/.bashrc | pyline w
+
+    # Split into words and print (default: tab separated)
+    cat ~/.bashrc | pyline 'len(w) >= 2 and w[1] or "?"'
+
+    # Select the last word, dropping lines with no words
+    pyline -f ~/.bashrc 'w[-1:]'
+
+    # Regex matching with groups
+    cat ~/.bashrc | pyline -n -r '^#(.*)' 'rgx and rgx.group()'
+
+    ## Original Examples
+    # Print out the first 20 characters of every line
+    tail access_log | pyline "line[:20]"
+
+    # Print just the URLs in the access log (seventh "word" in the line)
+    tail access_log | pyline "words[6]"
+
+Work with paths and files::
+
+    # List current directory files larger than 1 Kb
+    ls | pyline -m os \
+      "os.path.isfile(line) and os.stat(line).st_size > 1024 and line"
+
+    # List current directory files larger than 1 Kb
+    #pip install path.py
+    ls | pyline -p 'p and p.size > 1024 and line'
+
+
+
+.. include:: ../HISTORY.rst    
+
+
+.. include:: ../AUTHORS.rst
+
+License
+========
+.. include:: ../LICENSE.psf

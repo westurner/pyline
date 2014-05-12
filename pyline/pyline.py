@@ -44,15 +44,6 @@ Shell::
     cat ~/.bashrc | pyline.py -n -r '^#(.*)' 'rgx and rgx.group()'
 
 
-**History**
-
-# updated 2012.11.17, Wes Turner
-# updated 2005.07.21, thanks to Jacob Oscarson
-# updated 2006.03.30, thanks to Mark Eichin
-
-see: `<http://code.activestate.com/recipes/437932-pyline-a-grep-like-sed-like-command-line-tool/>`_
-
-
 """
 
 import csv
@@ -448,9 +439,9 @@ http://localhost/path/to/file?query#fragment
 import tempfile
 import os
 try:
-    import StringIO as io
+    import StringIO as io   # Python 2
 except ImportError:
-    import io
+    import io               # Python 3
 import unittest
 
 
