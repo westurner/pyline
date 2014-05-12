@@ -170,6 +170,8 @@ def pyline(iterable,
             # cmd = "rgx and rgx.groupdict()"
         else:
             cmd = "line"
+        if path_tools:
+            cmd = "p"
 
     Path = None
     if path_tools:
@@ -214,10 +216,9 @@ def pyline(iterable,
         p = path = None
         if path_tools and line.rstrip():
             try:
-                path = Path(line) or None
+                p = path = Path(line.strip()) or None
             except Exception as e:
                 log.exception(e)
-                path = None
                 pass
 
         rgx = _rgx and _rgx.match(line) or None
