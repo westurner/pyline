@@ -187,7 +187,7 @@ def pyline(iterable,
                 pass
 
     try:
-        log.debug("_cmd: %r" % cmd)
+        log.info("_cmd: %r" % cmd)
         codeobj = compile(cmd, 'command', 'eval')
     except Exception as e:
         e.message = "%s\ncmd: %s" % (e.message, cmd)
@@ -228,6 +228,7 @@ def pyline(iterable,
             result = eval(codeobj, globals(), locals())  # ...
         except Exception as e:
             e.cmd = cmd
+            log.exception(repr(cmd))
             log.exception(e)
             raise
         yield PylineResult(i, result)
