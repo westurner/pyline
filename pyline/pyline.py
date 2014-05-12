@@ -55,8 +55,13 @@ see: `<http://code.activestate.com/recipes/437932-pyline-a-grep-like-sed-like-co
 
 """
 
+import csv
+import json
 import logging
+import operator
 import sys
+
+from collections import namedtuple
 
 EPILOG = __doc__  # """  """
 
@@ -78,7 +83,6 @@ STANDARD_REGEXES = {}
 
 log = logging.getLogger()
 
-from collections import namedtuple
 Result = namedtuple('Result', ('n', 'result'))
 
 
@@ -134,6 +138,22 @@ def pyline(_input,
            idelim=None,
            odelim="\t",
            **kwargs):
+    """
+    Pyline: process an iterable
+
+    Args:
+        _input (iterable): iterable of strings (e.g. sys.stdin or a file)
+        cmd (str): python command string
+        modules ([str]): list of modules to import
+        regex (str): regex pattern to match (with groups)
+        regex_options (TODO): Regex options: I L M S X U (see ``pydoc re``)
+        path_tools (bool): try to cast each line to a file
+        idelim (str): input delimiter
+        odelim (str): output delimiter
+
+    Returns:
+        iterable of PylineResult namedtuples
+    """
 
     for _importset in modules:
         for _import in _importset.split(','):
@@ -230,7 +250,7 @@ def itemgetter_default(args, default=None):
     when the index does not exist
     """
     if args is None:
-        columns = xrange(len(line))
+        columns = xrange(len(args))
     else:
         columns = args
 
@@ -248,9 +268,6 @@ def get_list_from_str(str_, cast_callable=int):
         return []
     return [cast_callable(x.strip()) for x in str_.split(',')]
 
-# TODO FIXME
-import operator
-
 
 def sort_by(sortstr, nl, reverse=False):
     columns = get_list_from_str(sortstr)
@@ -263,9 +280,6 @@ def sort_by(sortstr, nl, reverse=False):
     return sorted(nl,
                   key=get_columns,
                   reverse=reverse)
-
-import csv
-import json
 
 
 class ResultWriter(object):
@@ -399,13 +413,16 @@ class ResultWriter_html(ResultWriter):
     def _html_row(self, obj):
         yield '\n<tr>'
         for attr, col in obj._asdict().iteritems():  # TODO: zip(_fields, ...)
-            yield "<td%s>" % (attr is not None and (' class="%s"' % attr) or '')
+            yield "<td%s>" % (
+                attr is not None and (' class="%s"' % attr) or '')
             if hasattr(col, '__iter__'):
                 for value in col:
                     yield u'<span>%s</span>' % value
             else:
                 # TODO
-                yield u'%s' % col and hasattr(col, 'rstrip') and col.rstrip() or str(col)
+                yield u'%s' % (
+                    col and hasattr(col, 'rstrip') and col.rstrip()
+                    or str(col))
             yield "</td>"
         yield "</tr>"
 
@@ -414,6 +431,7 @@ class ResultWriter_html(ResultWriter):
 
     def footer(self):
         self._output.write('</table>\n')
+
 
 TEST_INPUT = """
 Lines
@@ -455,6 +473,13 @@ class TestPyline(unittest.TestCase):
         PYLINE_TESTS = (
             {"cmd": "line"},
             {"cmd": "words"},
+            {"cmd": "sorted(words)"},
+            {"cmd": "w[:3]"},
+            {"regex":r"(.*)"},
+            {"regex":r"(.*)", "cmd": "rgx and rgx.groups()"},
+            {"regex":r"(.*)", "cmd": "rgx and rgx.groups() or '#'"},
+
+#             "cmd": "rgx and rgx.groups()"},
         )
         _test_output = sys.stdout
         for test in PYLINE_TESTS:
@@ -505,18 +530,50 @@ class TestPyline(unittest.TestCase):
             ("-p", "p and p.isfile() and (p.size, p, p.stat())")
         )
 
-        TEST_ARGS = ('-f', self.TEST_FILE)
+        TEST_ARGS = ('-f', __file__)  # self.TEST_FILE)
 
         for argset in CMDLINE_TESTS:
             _args = TEST_ARGS + argset
             self.log.debug("main%s" % str(_args))
             try:
-
-                main(*_args)
+                output = main(*_args)
+                for n in output and output or []:
+                    self.log.debug(n)
             except Exception as e:
                 self.log.error("cmd: %s" % repr(_args))
                 self.log.exception(e)
                 raise
+
+
+def get_sort_function(opts):  # (sort_asc, sort_desc)
+    # FIXME
+    sortfunc = None
+    if opts.sort_asc:
+        logging.debug("sort_asc: %r" % opts.sort_asc)
+        if sortfunc is None:
+            sortfunc = (
+                lambda _output:
+                sort_by(opts.sort_asc,
+                        _output,
+                        reverse=False))
+        else:
+            sortfunc = (
+                lambda _output:
+                sort_by(opts.sort_asc, sortfunc(_output)))
+    if opts.sort_desc:
+        logging.debug("sort_desc: %r" % opts.sort_desc)
+        if sortfunc is None:
+            sortfunc = (
+                lambda _output:
+                sort_by(opts.sort_desc,
+                        _output,
+                        reverse=True))
+        else:
+            sortfunc = (
+                lambda _output:
+                sort_by(opts.sort_desc,
+                        sortfunc(_output)))
+    return sortfunc
 
 
 def main(*args):
@@ -524,8 +581,9 @@ def main(*args):
     import logging
     import sys
 
-    prs = optparse.OptionParser(usage="./%prog: [options] <command>",
-                                epilog=EPILOG)
+    prs = optparse.OptionParser(
+        usage="%prog: [options] \"<command>\"",
+        epilog=EPILOG)
 
     prs.add_option('-f',
                    dest='file',
@@ -616,16 +674,17 @@ def main(*args):
         import unittest
         exit(unittest.main())
 
+    sortfunc = get_sort_function(opts)
+
     if opts.file is '-':
-        _input_file = sys.stdin
+        opts._file = sys.stdin
     else:
-        _input_file = open(opts.file, 'r')
+        opts._file = open(opts.file, 'r')
 
     if opts.output is '-':
         opts._output = sys.stdout
     else:
         opts._output = open(opts.output, 'w')
-    _output = opts._output
 
     cmd = ' '.join(args)
     if not cmd.strip():
@@ -643,55 +702,30 @@ def main(*args):
     if opts.verbose:
         logging.debug(opts.__dict__)
 
-    # FIXME
-    sortfunc = None
-    if opts.sort_asc:
-        logging.debug("sort_asc: %r" % opts.sort_asc)
-        if sortfunc is None:
-            sortfunc = (
-                lambda _output:
-                sort_by(opts.sort_asc,
-                        _output,
-                        reverse=False))
-        else:
-            sortfunc = (
-                lambda _output:
-                sort_by(opts.sort_asc, sortfunc(_output)))
-    if opts.sort_desc:
-        logging.debug("sort_desc: %r" % opts.sort_desc)
-        if sortfunc is None:
-            sortfunc = (
-                lambda _output:
-                sort_by(opts.sort_desc,
-                        _output,
-                        reverse=True))
-        else:
-            sortfunc = (
-                lambda _output:
-                sort_by(opts.sort_desc,
-                        sortfunc(_output)))
+    opts.attrs = PylineResult._fields
 
     writer, output_func = ResultWriter.get_writer(
-        _output,
+        opts._output,
         filetype=opts.output_filetype,
         number_lines=opts.number_lines,
-        attrs=PylineResult._fields)
+        attrs=opts.attrs)
     writer.header()
 
     if not sortfunc:
-        for result in pyline(_input_file, **opts.__dict__):
+        for result in pyline(opts._file, **opts.__dict__):
             if not result.result:
                 continue  # TODO
             output_func(result)
     else:
         results = []
-        for result in pyline(_input_file, **opts.__dict__):
+        for result in pyline(opts._file, **opts.__dict__):
             if not result.result:
                 continue
             results.append(result)
         for result in sortfunc(results):
             output_func(result)
 
+    opts._file.close()
     writer.footer()
 
     if opts.output is not '-':
