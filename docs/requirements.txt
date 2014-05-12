@@ -1,0 +1,10 @@
+sphinx
+sphinxcontrib-napoleon
+sphinx_rtd_theme
+
+sphinxcontrib-ansi
+# src:
+#   - hg+https://bitbucket.org/birkenfeld/sphinx-contrib
+sphinxcontrib-programoutput
+# src:
+#   - hg+https://bitbucket.org/birkenfeld/sphinx-contrib
