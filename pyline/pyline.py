@@ -468,11 +468,9 @@ class TestPyline(unittest.TestCase):
             {"cmd": "words"},
             {"cmd": "sorted(words)"},
             {"cmd": "w[:3]"},
-            {"regex":r"(.*)"},
-            {"regex":r"(.*)", "cmd": "rgx and rgx.groups()"},
-            {"regex":r"(.*)", "cmd": "rgx and rgx.groups() or '#'"},
-
-#             "cmd": "rgx and rgx.groups()"},
+            {"regex": r"(.*)"},
+            {"regex": r"(.*)", "cmd": "rgx and rgx.groups()"},
+            {"regex": r"(.*)", "cmd": "rgx and rgx.groups() or '#'"},
         )
         _test_output = sys.stdout
         for test in PYLINE_TESTS:
