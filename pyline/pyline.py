@@ -120,7 +120,7 @@ class PylineResult(Result):
             unicode(odelim).join(str(x) for x in record))
 
 
-def pyline(_input,
+def pyline(iterable,
            cmd=None,
            modules=[],
            regex=None,
@@ -133,7 +133,7 @@ def pyline(_input,
     Pyline: process an iterable
 
     Args:
-        _input (iterable): iterable of strings (e.g. sys.stdin or a file)
+        iterable (iterable): iterable of strings (e.g. sys.stdin or a file)
         cmd (str): python command string
         modules ([str]): list of modules to import
         regex (str): regex pattern to match (with groups)
@@ -207,7 +207,7 @@ def pyline(_input,
     # from itertools import imap, repeat
     # j = lambda args: imap(str, izip_longest(args, repeat(odelim)))
 
-    for i, line in enumerate(_input):
+    for i, line in enumerate(iterable):
         l = line
         w = words = [w for w in line.strip().split(idelim)]
 
