@@ -48,8 +48,29 @@ docs:
 	#open docs/_build/html/index.html
 
 release: clean
+	#	 ver=v0.1.1
+	## update version in setup.py
+	#    sed "s/version='\(.*\)'/version='${ver}'/g"
+	## update version in pyline/__init__.py
+	#    sed "s/__version__ = '\(.*\)'/__version__ = '${ver}'/g" 
+	## add updated version to repository
+	#    hg commit -m setup.py pyline/__init__.py
+	#    git commit -m setup.py pyline/__init__.py
+	## tag the release in the repository
+	##   hg tag "v${ver}"
+	#    git tag "v${ver}"
+	## push the changes
+	#    hg push
+	#    git push
+	## update http://github.com/westurner/pyline/releases
+	## with a new tagged release
+	#	 browse to url, select version tag, click 'Edit release'
+	#	 set the release name to "pyline v${ver}"
+	## register with pypi
+	#    python setup.py build register
+	## generate a source distribution and upload to pypi
 	python setup.py sdist upload
-	python setup.py bdist_wheel upload
+	#python setup.py bdist_wheel upload
 
 dist: clean
 	python setup.py sdist
