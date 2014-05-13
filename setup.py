@@ -71,7 +71,7 @@ def build_long_description():
 
 setup(
     name='pyline',
-    version='0.1.3',
+    version='0.1.4',
     description=(
         'A grep-like, sed-like command-line tool for line-based '
         'processing in Python.'),
@@ -79,6 +79,7 @@ setup(
     author='Wes Turner',
     author_email='wes@wrd.nu',
     url='https://github.com/westurner/pyline',
+    download_url='https://github.com/westurner/pyline/releases',
     packages=[
         'pyline',
     ],
@@ -87,7 +88,7 @@ setup(
     include_package_data=True,
     install_requires=[
     ],
-    license="BSD",
+    license="PSF",
     zip_safe=False,
     keywords='pyline',
     classifiers=[
