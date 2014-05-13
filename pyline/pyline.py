@@ -50,7 +50,6 @@ import csv
 import json
 import logging
 import operator
-import sys
 
 from collections import namedtuple
 
@@ -438,114 +437,93 @@ class ResultWriter_html(ResultWriter):
         self._output.write('</table>\n')
 
 
-TEST_INPUT = """
-Lines
-=======
-Of a file
----------
-With Text
+def get_option_parser():
+    import optparse
+    prs = optparse.OptionParser(
+        usage="%prog: [options] \"<command>\"",
+        epilog=EPILOG)
 
-And Without
+    prs.add_option('-f',
+                   dest='file',
+                   action='store',
+                   default='-',
+                   help="Input file (default: '-' for stdin)")
 
-http://localhost/path/to/file?query#fragment
+    prs.add_option('-o', '--output-file',
+                   dest='output',
+                   action='store',
+                   default='-',
+                   help="Output file (default: '-' for stdout)")
+    prs.add_option('-O', '--output-filetype',
+                   dest='output_filetype',
+                   action='store',
+                   default='txt',
+                   help="Output filetype <txt|csv|tsv|json> (default: txt)")
 
-"""
-import tempfile
-import os
-try:
-    import StringIO as io   # Python 2
-except ImportError:
-    import io               # Python 3
-import unittest
+    prs.add_option('-F', '--input-delim',
+                   dest='idelim',
+                   action='store',
+                   default=None,
+                   help=('Strings input field delimiter to split line'
+                         ' into ``words`` by'
+                         ' (default: None (whitespace)``'))
+    prs.add_option('-d', '--output-delim',
+                   dest='odelim',
+                   default="\t",
+                   help=('String output delimiter for lists and tuples'
+                         ' (default: \t (tab))``'))
 
+    prs.add_option('-m', '--modules',
+                   dest='modules',
+                   action='append',
+                   default=[],
+                   help='Module name to import (default: []) see -p and -r')
 
-class TestPyline(unittest.TestCase):
+    prs.add_option('-p', '--path-tools',
+                   dest='path_tools',
+                   action='store_true',
+                   help='Create path objects from each ``line``')
 
-    def setUp(self, *args):
-        (self._test_file_fd, self.TEST_FILE) = tempfile.mkstemp(text=True)
-        fd = self._test_file_fd
-        os.write(fd, TEST_INPUT)
-        os.write(fd, self.TEST_FILE)
+    prs.add_option('-r', '--regex',
+                   dest='regex',
+                   action='store',
+                   help='Regex to compile and match as ``rgx``')
+    prs.add_option('-R', '--regex-options',
+                   dest='regex_options',
+                   action='store',
+                   default='im',
+                   help='Regex options: I L M S X U (see ``pydoc re``)')
 
-        self.log = logging.getLogger(self.__class__.__name__)
-        self.log.setLevel(logging.DEBUG)
+    prs.add_option("-s", "--sort-asc",
+                   dest="sort_asc",
+                   action='store',
+                   help="Sort Ascending by field number")
+    prs.add_option("-S", "--sort-desc",
+                   dest="sort_desc",
+                   action='store',
+                   help="Reverse the sort order")
 
-    def tearDown(self):
-        os.close(self._test_file_fd)
-        os.remove(self.TEST_FILE)
+    prs.add_option('-n', '--number-lines',
+                   dest='number_lines',
+                   action='store_true',
+                   help='Print line numbers of matches')
 
-    def test_pyline__function(self):
-        PYLINE_TESTS = (
-            {"cmd": "line"},
-            {"cmd": "words"},
-            {"cmd": "sorted(words)"},
-            {"cmd": "w[:3]"},
-            {"regex": r"(.*)"},
-            {"regex": r"(.*)", "cmd": "rgx and rgx.groups()"},
-            {"regex": r"(.*)", "cmd": "rgx and rgx.groups() or '#'"},
-        )
-        _test_output = sys.stdout
-        for test in PYLINE_TESTS:
-            for line in pyline(io.StringIO(TEST_INPUT), **test):
-                print(line, file=_test_output)
+    prs.add_option('-i', '--ipython',
+                   dest='start_ipython',
+                   action='store_true',
+                   help='Start IPython with results')
 
-    def test_pyline_cmdline(self):
-        CMDLINE_TESTS = (
-            tuple(),
-            ("line",),
-            ("l",),
-            ("l", "-n"),
-            ("l and l[:5]",),
-            ("words",),
-            ("w",),
-            ("w", "-n"),
-            ("w", '-O', 'csv'),
-            ("w", '-O', 'csv', '-n'),
+    prs.add_option('-v', '--verbose',
+                   dest='verbose',
+                   action='store_true',)
+    prs.add_option('-q', '--quiet',
+                   dest='quiet',
+                   action='store_true',)
+    prs.add_option('-t', '--test',
+                   dest='run_tests',
+                   action='store_true',)
 
-            ("w", '-O', 'csv', '-s', '0'),
-            ("w", '-O', 'csv', '-s', '1'),
-            ("w", '-O', 'csv', '-s', '1,2'),
-            ("w", '-O', 'csv', '-S', '1'),
-            ("w", '-O', 'csv', '-S', '1', '-n'),
-
-            ("w", '-O', 'json'),
-            ("w", '-O', 'json', '-n'),
-
-            ("w", '-O', 'tsv'),
-
-            ("w", '-O', 'html'),
-
-            ("len(words) > 2 and words",),
-
-            ('-r', '(.*with.*)'),
-            ('-r', '(.*with.*)',            '-R', 'i'),
-            ('-r', '(?P<line>.*with.*)'),
-            ('-r', '(?P<line>.*with.*)',    '-O', 'json'),
-            ('-r', '(.*with.*)', 'rgx and {"n":i, "match": rgx.groups()[0]}',
-             '-O', 'json'),
-            ("-r", '(.*with.*)', '_rgx.findall(line)',
-             '-O', 'json'),
-
-            ('-m',
-             'os',
-             'os.path.isfile(line) and (os.stat(line).st_size, line)'),
-            #
-            ("-p", "p and p.isfile() and (p.size, p, p.stat())")
-        )
-
-        TEST_ARGS = ('-f', __file__)  # self.TEST_FILE)
-
-        for argset in CMDLINE_TESTS:
-            _args = TEST_ARGS + argset
-            self.log.debug("main%s" % str(_args))
-            try:
-                output = main(*_args)
-                for n in output and output or []:
-                    self.log.debug(n)
-            except Exception as e:
-                self.log.error("cmd: %s" % repr(_args))
-                self.log.exception(e)
-                raise
+    return prs
 
 
 def get_sort_function(opts):  # (sort_asc, sort_desc)
@@ -580,86 +558,10 @@ def get_sort_function(opts):  # (sort_asc, sort_desc)
 
 
 def main(*args):
-    import optparse
     import logging
     import sys
 
-    prs = optparse.OptionParser(
-        usage="%prog: [options] \"<command>\"",
-        epilog=EPILOG)
-
-    prs.add_option('-f',
-                   dest='file',
-                   action='store',
-                   default='-',
-                   help="Input file (default: '-' for stdin)")
-    prs.add_option('-o', '--output-file',
-                   dest='output',
-                   action='store',
-                   default='-',
-                   help="Output file (default: '-' for stdout)")
-
-    prs.add_option('-O', '--output-filetype',
-                   dest='output_filetype',
-                   action='store',
-                   default='txt',
-                   help="Output filetype <txt|csv|tsv|json> (default: txt)")
-
-    prs.add_option('-F', '--input-delim',
-                   dest='idelim',
-                   action='store',
-                   default=None,
-                   help=('Strings input field delimiter to split line'
-                         ' into ``words`` by'
-                         ' (default: None (whitespace)``'))
-    prs.add_option('-d', '--output-delim',
-                   dest='odelim',
-                   default="\t",
-                   help=('String output delimiter for lists and tuples'
-                         ' (default: \t (tab))``'))
-
-    prs.add_option('-m', '--modules',
-                   dest='modules',
-                   action='append',
-                   default=[],
-                   help='Module name to import (default: []) see -p and -r')
-    prs.add_option('-p', '--path-tools',
-                   dest='path_tools',
-                   action='store_true',
-                   help='Create path objects from each ``line``')
-    prs.add_option('-r', '--regex',
-                   dest='regex',
-                   action='store',
-                   help='Regex to compile and match as ``rgx``')
-    prs.add_option('-R', '--regex-options',
-                   dest='regex_options',
-                   action='store',
-                   default='im',
-                   help='Regex options: I L M S X U (see ``pydoc re``)')
-
-    prs.add_option("-s", "--sort-asc",
-                   dest="sort_asc",
-                   action='store',
-                   help="Sort Ascending by field number")
-    prs.add_option("-S", "--sort-desc",
-                   dest="sort_desc",
-                   action='store',
-                   help="Reverse the sort order")
-
-    prs.add_option('-n', '--number-lines',
-                   dest='number_lines',
-                   action='store_true',
-                   help='Print line numbers of matches')
-
-    prs.add_option('-v', '--verbose',
-                   dest='verbose',
-                   action='store_true',)
-    prs.add_option('-q', '--quiet',
-                   dest='quiet',
-                   action='store_true',)
-    prs.add_option('-t', '--test',
-                   dest='run_tests',
-                   action='store_true',)
+    prs = get_option_parser()
 
     args = args and list(args) or sys.argv[1:]
     (opts, args) = prs.parse_args(args)
