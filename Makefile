@@ -49,6 +49,10 @@ docs:
 
 release: clean
 	#	 ver=v0.1.1
+	## update HISTORY.txt
+	#    release date
+	#    release version
+	#    summary
 	## update version in setup.py
 	#    sed "s/version='\(.*\)'/version='${ver}'/g"
 	## update version in pyline/__init__.py
