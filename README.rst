@@ -31,12 +31,13 @@ Pyline: a grep-like, sed-like command-line tool (Python package)
 Features
 ==========
 
-* Compatibility with the `original Pyline recipe`_
+* Compatibility with the `original pyline recipe`_
 * Python `str.split`_ by an optional delimiter str (``-F``, ``--input-delim``)
 * `Python regex`_ (``-r``, ``--regex``, ``-R``, ``--regex-options``)
 * Output as TXT, CSV, TSV, JSON (``-O``, ``-output-filetype``)
 * Lazy sorting (``-s``, ``--sort-asc``; ``-S``, ``--sort-desc``)
-* Create `path.py`_ (or `pathlib`_) objects from each line (``-p``,
+* Create `path.py <https://pypi.python.org/pypi/path.py>`_
+  (or `pathlib`_) objects from each line (``-p``,
   ``--path-tools``)
 * Functional `namedtuples`_, `iterators`_ ``yield`` -ing `generators`_
 * `optparse`_ argument parsing (``-h``, ``--help``)
@@ -56,18 +57,20 @@ Features
 
 Why
 =====
-Somewhat unsurprisingly, I found the `original Pyline recipe`_
+Somewhat unsurprisingly, I found the `original pyline recipe`_
 while searching for "python grep sed"
 (see ``AUTHORS.rst`` and ``LICENSE.psf``).
 
-I added an option for setting ``p = path.path(line)`` (with `path.py`_)
+I added an option for setting ``p = Path(line)``
 in the `eval`_/`compile`_ command context and `added it to my dotfiles
 <https://github.com/westurner/dotfiles/commits/master/src/dotfiles/pyline.py>`_
 ; where it grew tests and an ``optparse.OptionParser``; and is now
 promoted to a `GitHub`_ project with `ReadTheDocs`_ documentation,
-tests with tox and `Travis-CI`, and a setup.py for `PyPi`_.
+tests with tox and `Travis-CI`_, and a setup.py for `PyPi`_.
 
 
+What
+======
 Pyline is an ordered `MapReduce`_ tool:
 
 Input Reader:
@@ -135,6 +138,7 @@ Process::
 
     # Regex matching with groups
     cat ~/.bashrc | pyline -n -r '^#(.*)' 'rgx and rgx.group()'
+    cat ~/.bashrc | pyline -n -r '^#(.*)'
 
     ## Original Examples
     # Print out the first 20 characters of every line
