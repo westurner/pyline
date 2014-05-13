@@ -679,16 +679,6 @@ def main(*args):
 
     sortfunc = get_sort_function(opts)
 
-    if opts.file is '-':
-        opts._file = sys.stdin
-    else:
-        opts._file = open(opts.file, 'r')
-
-    if opts.output is '-':
-        opts._output = sys.stdout
-    else:
-        opts._output = open(opts.output, 'w')
-
     cmd = ' '.join(args)
     if not cmd.strip():
         if opts.regex:
@@ -707,32 +697,51 @@ def main(*args):
 
     opts.attrs = PylineResult._fields
 
-    writer, output_func = ResultWriter.get_writer(
-        opts._output,
-        filetype=opts.output_filetype,
-        number_lines=opts.number_lines,
-        attrs=opts.attrs)
-    writer.header()
+    try:
+        if opts.file is '-':
+            opts._file = sys.stdin
+        else:
+            opts._file = open(opts.file, 'r')
 
-    if not sortfunc:
-        for result in pyline(opts._file, **opts.__dict__):
-            if not result.result:
-                continue  # TODO
-            output_func(result)
-    else:
-        results = []
-        for result in pyline(opts._file, **opts.__dict__):
-            if not result.result:
-                continue
-            results.append(result)
-        for result in sortfunc(results):
-            output_func(result)
+        if opts.output is '-':
+            opts._output = sys.stdout
+        else:
+            opts._output = open(opts.output, 'w')
 
-    opts._file.close()
-    writer.footer()
+        writer, output_func = ResultWriter.get_writer(
+            opts._output,
+            filetype=opts.output_filetype,
+            number_lines=opts.number_lines,
+            attrs=opts.attrs)
+        writer.header()
 
-    if opts.output is not '-':
-        opts._output.close()
+        # if not sorting, return a result iterator
+        if not sortfunc:
+            for result in pyline(opts._file, **opts.__dict__):
+                if not result.result:
+                    # skip result if not bool(result.result)
+                    continue  # TODO
+
+                output_func(result)
+        # if sorting, return the sorted list
+        else:
+            results = []
+            for result in pyline(opts._file, **opts.__dict__):
+                if not result.result:
+                    # skip result if not bool(result.result)
+                    continue
+                results.append(result)
+            for result in sortfunc(results):
+                output_func(result)
+
+        writer.footer()
+    finally:
+        if getattr(opts._file, 'fileno', int)() not in (0, 1, 2):
+            opts._file.close()
+
+        if opts.output != '-':
+            opts._output.close()
+
 
 if __name__ == "__main__":
     main()
