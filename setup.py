@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import glob
 import logging
 import os
 import subprocess
@@ -12,17 +13,16 @@ try:
 except ImportError:
     from distutils.core import setup, Command
 
-CONFIG = {}
-DEBUG = CONFIG.get('debug', True)  # False # True
+CONFIG = {
+    'debug': True,
+    'logname': None,
+    'logformat': '%(asctime)s %(name)s %(levelname)-5s %(message)s',
+    'loglevel': logging.DEBUG,  # logging.INFO
+}
 
-logging.basicConfig(
-    format='%(asctime)s %(name)s %(levelname)-5s %(message)s')
-log = logging.getLogger()
-
-if DEBUG:
-    log.setLevel(logging.DEBUG)
-else:
-    log.setLevel(logging.INFO)
+logging.basicConfig(format=CONFIG['logformat'])
+log = logging.getLogger(CONFIG['logname'])
+log.setLevel(CONFIG['loglevel'])
 
 SETUPPY_PATH = os.path.dirname(os.path.abspath(__file__)) or '.'
 log.debug('SETUPPY_PATH: %s' % SETUPPY_PATH)
@@ -50,11 +50,12 @@ class PyTestCommand(Command):
         cmd = [sys.executable,
                os.path.join(SETUPPY_PATH, 'runtests.py'),
                '-v']
-        cmd.extend([
-            os.path.join(SETUPPY_PATH, 'pyline/pyline.py'),
-        ])
+
+        globstr = os.path.join(SETUPPY_PATH, 'tests/test_*.py')
+        cmd.extend(glob.glob(globstr))
 
         cmdstr = ' '.join(cmd)
+        print(cmdstr)
         log.info(cmdstr)
 
         errno = subprocess.call(cmd)
@@ -62,7 +63,7 @@ class PyTestCommand(Command):
 
 setup(
     name='pyline',
-    version='0.1.0',
+    version='0.1.1',
     description='A tool for line-based processing in Python.',
     long_description=readme + '\n\n' + history,
     author='Wes Turner',
