@@ -36,7 +36,7 @@ Features
 * `Python regex`_ (``-r``, ``--regex``, ``-R``, ``--regex-options``)
 * Output as TXT, CSV, TSV, JSON (``-O``, ``-output-filetype``)
 * Lazy sorting (``-s``, ``--sort-asc``; ``-S``, ``--sort-desc``)
-* Create `path.py <https://pypi.python.org/pypi/path.py>`_
+* Create `path.py <https://pypi.python.org/pypi/path.py>`__
   (or `pathlib`_) objects from each line (``-p``,
   ``--path-tools``)
 * Functional `namedtuples`_, `iterators`_ ``yield`` -ing `generators`_
@@ -69,6 +69,12 @@ promoted to a `GitHub`_ project with `ReadTheDocs`_ documentation,
 tests with tox and `Travis-CI`_, and a setup.py for `PyPi`_.
 
 
+.. _original Pyline recipe: https://code.activestate.com/recipes/437932-pyline-a-grep-like-sed-like-command-line-tool/
+.. _eval: https://docs.python.org/2/library/functions.html#eval
+.. _compile: https://docs.python.org/2/library/functions.html#compile
+.. _MapReduce: https://en.wikipedia.org/wiki/MapReduce
+
+
 What
 ======
 Pyline is an ordered `MapReduce`_ tool:
@@ -90,13 +96,6 @@ Reduce Function:
 
 Output Writer:
     ``ResultWriter`` classes
-
-
-.. _original Pyline recipe: https://code.activestate.com/recipes/437932-pyline-a-grep-like-sed-like-command-line-tool/
-.. _path.py: https://pythonhosted.org/path.py/api.htm
-.. _eval: https://docs.python.org/2/library/functions.html#eval
-.. _compile: https://docs.python.org/2/library/functions.html#compile   
-.. _MapReduce: https://en.wikipedia.org/wiki/MapReduce
 
 
 Installing
@@ -159,11 +158,8 @@ Work with paths and files::
 
 
 
-.. include:: ../HISTORY.rst    
-
-
-.. include:: ../AUTHORS.rst
 
 License
 ========
-.. include:: ../LICENSE.psf
+`Python Software License
+<https://github.com/westurner/pyline/blob/master/LICENSE.psf>`_
