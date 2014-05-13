@@ -32,9 +32,6 @@ if sys.argv[-1] == 'publish':
     os.system('python setup.py sdist upload')
     sys.exit()
 
-readme = open('README.rst').read()
-history = open('HISTORY.rst').read().replace('.. :changelog:', '')
-
 
 class PyTestCommand(Command):
     user_options = []
@@ -61,11 +58,22 @@ class PyTestCommand(Command):
         errno = subprocess.call(cmd)
         raise SystemExit(errno)
 
+
+def build_long_description():
+    with open('README.rst') as f:
+        readme = f.read()
+    with open('HISTORY.rst') as f:
+        history = f.read().replace('. :changelog:', '')
+    with open('AUTHORS.rst') as f:
+        authors = f.read()
+    return readme + '\n\n' + history + '\n\n' + authors
+
+
 setup(
     name='pyline',
     version='0.1.1',
     description='A tool for line-based processing in Python.',
-    long_description=readme + '\n\n' + history,
+    long_description=build_long_description(),
     author='Wes Turner',
     author_email='wes@wrd.nu',
     url='https://github.com/westurner/pyline',
