@@ -73,6 +73,16 @@ REGEX_OPTIONS = dict(
 STANDARD_REGEXES = {}
 
 log = logging.getLogger()
+log.setLevel(logging.INFO)
+
+
+class NullHandler(logging.Handler):
+    def emit(self, record):
+        pass
+
+
+h = NullHandler()
+log.addHandler(h)
 
 Result = namedtuple('Result', ('n', 'result'))
 
