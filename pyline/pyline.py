@@ -50,6 +50,7 @@ import csv
 import json
 import logging
 import operator
+import textwrap
 
 from collections import namedtuple
 
@@ -293,6 +294,7 @@ class ResultWriter(object):
         'tsv': "\t",
         'html': True,
         "txt": True,
+        "checkbox": True
     }
     filetype = None
 
@@ -328,7 +330,7 @@ class ResultWriter(object):
                    **kwargs):
         """get writer object for _output with the specified filetype
 
-        :param output_filetype: csv | json | tsv
+        :param output_filetype: txt | csv | tsv | json | html | checkbox
         :param _output: output file
 
         """
@@ -348,6 +350,8 @@ class ResultWriter(object):
             writer = ResultWriter_json(_output)
         elif output_filetype == "html":
             writer = ResultWriter_html(_output, **kwargs)
+        elif output_filetype == "checkbox":
+            writer = ResultWriter_checkbox(_output, **kwargs)
         else:
             raise NotImplementedError()
         return (
@@ -435,6 +439,21 @@ class ResultWriter_html(ResultWriter):
 
     def footer(self):
         self._output.write('</table>\n')
+
+
+class ResultWriter_checkbox(ResultWriter):
+    filetype = 'checkbox'
+
+    def _checkbox_row(self, obj, wrap=79):
+        yield u'\n'.join(textwrap.wrap(
+            unicode(obj),
+            initial_indent=u'- [ ] ',
+            subsequent_indent=u'      '
+        ))
+        yield '\n'
+
+    def write(self, obj):
+        return self._output.write(u''.join(self._checkbox_row(obj)))
 
 
 def get_option_parser():

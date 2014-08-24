@@ -93,12 +93,15 @@ class TestPyline(unittest.TestCase):
 
             ("w", '-O', 'html'),
 
+            ("w", '-O', 'checkbox'),
+
             ("len(words) > 2 and words",),
 
             ('-r', '(.*with.*)'),
             ('-r', '(.*with.*)',            '-R', 'i'),
             ('-r', '(?P<line>.*with.*)'),
             ('-r', '(?P<line>.*with.*)',    '-O', 'json'),
+            ('-r', '(?P<line>.*with.*)',    '-O', 'checkbox'),
             ('-r', '(.*with.*)', 'rgx and {"n":i, "match": rgx.groups()[0]}',
              '-O', 'json'),
             ("-r", '(.*with.*)', '_rgx.findall(line)',
