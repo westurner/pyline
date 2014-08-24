@@ -46,6 +46,11 @@ Shell::
 
 """
 
+try:
+    import StringIO as _; _
+except ImportError:
+    unicode = lambda x: x
+
 import csv
 import json
 import logging
@@ -91,15 +96,15 @@ class PylineResult(Result):
 
     def __str__(self):
         result = self.result
-        odelim = u'\t'  # TODO
+        odelim = unicode('\t')  # TODO
         if result is None or result is False:
             return result
 
-        elif hasattr(self.result, 'itervalues'):
-            for col in self.result.itervalues():
-                return odelim.join(str(s) for s in self.result.itervalues())
+        elif hasattr(result, 'itervalues'):
+            for col in result.itervalues():
+                return odelim.join(str(s) for s in result.itervalues())
 
-        elif hasattr(self.result, '__iter__'):
+        elif hasattr(result, '__iter__'):
             result = odelim.join(str(s) for s in result)
         else:
             if result[-1] == '\n':
@@ -125,9 +130,9 @@ class PylineResult(Result):
     def _numbered_str(self, odelim):
         record = self._numbered()
         return ' %4d%s%s' % (
-            record.next(),
+            next(record),
             odelim,
-            unicode(odelim).join(str(x) for x in record))
+            unicode(odelim).join(unicode(x) for x in record))
 
 
 def _import_path_module():
@@ -292,6 +297,8 @@ def sort_by(sortstr, nl, reverse=False):
 
     get_columns = itemgetter_default(columns, default=None)
 
+    print(nl)
+
     return sorted(nl,
                   key=get_columns,
                   reverse=reverse)
@@ -417,6 +424,11 @@ class ResultWriter_json(ResultWriter):
 
 
 class ResultWriter_html(ResultWriter):
+    """
+
+    .. warning:: This does not call cgi.escape on row or column values.
+
+    """
     filetype = 'html'
 
     def header(self, *args, **kwargs):
@@ -425,7 +437,7 @@ class ResultWriter_html(ResultWriter):
         self._output.write("<tr>")
         if bool(attrs):
             for col in attrs:
-                self._output.write(u"<th>%s</th>" % col)
+                self._output.write(unicode("<th>%s</th>") % col)
         self._output.write("</tr>")
 
     def _html_row(self, obj):
@@ -435,17 +447,17 @@ class ResultWriter_html(ResultWriter):
                 attr is not None and (' class="%s"' % attr) or '')
             if hasattr(col, '__iter__'):
                 for value in col:
-                    yield u'<span>%s</span>' % value
+                    yield unicode('<span>%s</span>') % value
             else:
                 # TODO
-                yield u'%s' % (
+                yield unicode('%s') % (
                     col and hasattr(col, 'rstrip') and col.rstrip()
                     or str(col))
             yield "</td>"
         yield "</tr>"
 
     def write(self, obj):
-        return self._output.write(u''.join(self._html_row(obj,)))
+        return self._output.write(unicode('').join(self._html_row(obj,)))
 
     def footer(self):
         self._output.write('</table>\n')
@@ -455,15 +467,15 @@ class ResultWriter_checkbox(ResultWriter):
     filetype = 'checkbox'
 
     def _checkbox_row(self, obj, wrap=79):
-        yield u'\n'.join(textwrap.wrap(
-            unicode(obj),
-            initial_indent=u'- [ ] ',
-            subsequent_indent=u'      '
+        yield unicode('\n').join(textwrap.wrap(
+            unicode(getattr(obj, 'result', obj)),
+            initial_indent='- [ ] ',
+            subsequent_indent='      '
         ))
         yield '\n'
 
     def write(self, obj):
-        return self._output.write(u''.join(self._checkbox_row(obj)))
+        return self._output.write(unicode('').join(self._checkbox_row(obj)))
 
 
 def get_option_parser():

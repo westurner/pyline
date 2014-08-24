@@ -8,6 +8,9 @@ test_pyline
 Tests for `pyline` module.
 """
 
+if 'unicode' not in globals():
+    unicode = str
+
 import unittest
 
 from pyline import pyline
@@ -30,6 +33,7 @@ import os
 import sys
 try:
     import StringIO as io   # Python 2
+    bytes = lambda x, y: x
 except ImportError:
     import io               # Python 3
 
@@ -40,12 +44,12 @@ class TestPyline(unittest.TestCase):
         self.setup_logging()
         (self._test_file_fd, self.TEST_FILE) = tempfile.mkstemp(text=True)
         fd = self._test_file_fd
-        os.write(fd, TEST_INPUT)
-        os.write(fd, self.TEST_FILE)
+        os.write(fd, bytes(TEST_INPUT, 'utf8'))
+        os.write(fd, bytes(self.TEST_FILE, 'utf8'))
         self.log.info("setup: %r", repr(self.TEST_FILE))
 
     def setup_logging(self):
-        self.log = logging.getLogger(self.__class__.__name__)
+        self.log = logging.getLogger('test')
         self.log.setLevel(logging.DEBUG)
 
     def tearDown(self):
@@ -118,7 +122,7 @@ class TestPyline(unittest.TestCase):
 
         for argset in CMDLINE_TESTS:
             _args = TEST_ARGS + argset
-            self.log.debug("main%s" % str(_args))
+            self.log.info("main%s" % str(_args))
             try:
                 output = pyline.main(*_args)
                 for n in output and output or []:
