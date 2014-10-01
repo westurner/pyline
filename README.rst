@@ -158,6 +158,9 @@ Work with paths and files::
     ls | pyline -p 'p and p.size > 1024 and line'
 
 
+Documentation
+==============
+https://pyline.readthedocs.org/en/latest/
 
 
 License
