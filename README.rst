@@ -34,8 +34,8 @@ Features
 * Compatibility with the `original pyline recipe`_
 * Python `str.split`_ by an optional delimiter str (``-F``, ``--input-delim``)
 * `Python regex`_ (``-r``, ``--regex``, ``-R``, ``--regex-options``)
-* Output as `txt`, `csv`, `tsv`, `json`, `html` (``-O csv``, ``--output-filetype``)
-* Output as Markdown/ReStructuredText checkboxes (``-O checkbox``, ``--output-filetype checkbox``)
+* Output as `txt`, `csv`, `tsv`, `json`, `html` (``-O csv``, ``--output-filetype=csv``)
+* Output as Markdown/ReStructuredText checkboxes (``-O checkbox``, ``--output-filetype=checkbox``)
 * Lazy sorting (``-s``, ``--sort-asc``; ``-S``, ``--sort-desc``)
 * Create `path.py <https://pypi.python.org/pypi/path.py>`__
   (or `pathlib`_) objects from each line (``-p``,
