@@ -23,7 +23,7 @@ pyline
 .. _PyPi: https://pypi.python.org/pypi/pyline
 .. _Warehouse: https://warehouse.python.org/project/pyline
 .. _ReadTheDocs:  https://pyline.readthedocs.org/en/latest
-.. _Travis-CI:  https://travis-ci.org/westurner/pylin
+.. _Travis-CI:  https://travis-ci.org/westurner/pyline
 
 Pyline: a grep-like, sed-like command-line tool (Python package)
 
