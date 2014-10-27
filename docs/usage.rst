@@ -8,4 +8,4 @@ To use pyline in a project::
 
 To use pyline as a shell command:
 
-.. program-output:: pyline --help
+.. command-output:: pyline --help
