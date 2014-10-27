@@ -132,36 +132,6 @@ class PylineResult(Result):
             unicode(odelim).join(str(x) for x in record))
 
 
-def _import_path_module():
-    """
-    Attempt to import a path module (path.py, pathlib, str)
-
-    Returns:
-        function: function to apply to each line
-    """
-    Path = None
-    try:
-        # First, try to import path.py (pip install path.py)
-        from path import path as Path
-    except ImportError:
-        log.debug("path.py not found (pip install path.py)")
-        try:
-            # Otherwise, try to import pathlib (pip install pathlib OR Py3.4+)
-            from pathlib import Path
-            pass
-        except ImportError:
-            log.error("pathlib not found (pip install pathlib)")
-            Path = str  # os.exists, os
-            pass
-    return Path
-
-Path = _import_path_module()
-
-
-def get_path_module():
-    return Path
-
-
 def pyline(iterable,
            cmd=None,
            modules=[],
@@ -218,8 +188,10 @@ def pyline(iterable,
 
     Path = str
     if path_tools_pathpy:
+        import path
         Path = path.path
     if path_tools_pathlib:
+        import pathlib
         Path = pathlib.Path
 
 
