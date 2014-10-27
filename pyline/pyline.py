@@ -51,6 +51,7 @@ import json
 import logging
 import operator
 import textwrap
+import pprint
 
 from collections import namedtuple
 
@@ -74,6 +75,7 @@ STANDARD_REGEXES = {}
 
 log = logging.getLogger()
 log.setLevel(logging.INFO)
+log.setLevel(logging.DEBUG)
 
 
 class NullHandler(logging.Handler):
@@ -130,38 +132,18 @@ class PylineResult(Result):
             unicode(odelim).join(str(x) for x in record))
 
 
-def _import_path_module():
-    Path = None
-    try:
-        from path import path as Path
-    except ImportError:
-        try:
-            from pathlib import Path
-            pass
-        except ImportError:
-            log.error("pip install pathlib (or path.py)")
-            Path = str  # os.exists, os
-            pass
-    return Path
-
-Path = _import_path_module()
-
-
-def get_path_module():
-    return Path
-
-
 def pyline(iterable,
            cmd=None,
            modules=[],
            regex=None,
            regex_options=None,
-           path_tools=False,
+           path_tools_pathpy=False,
+           path_tools_pathlib=False,
            idelim=None,
            odelim="\t",
            **kwargs):
     """
-    Pyline: process an iterable
+    Process an iterable of lines
 
     Args:
         iterable (iterable): iterable of strings (e.g. sys.stdin or a file)
@@ -201,12 +183,17 @@ def pyline(iterable,
             # cmd = "rgx and rgx.groupdict()"
         else:
             cmd = "line"
-        if path_tools:
+        if path_tools_pathpy or path_tools_pathlib:
             cmd = "p"
 
-    Path = None
-    if path_tools:
-        Path = get_path_module()
+    Path = str
+    if path_tools_pathpy:
+        import path
+        Path = path.path
+    if path_tools_pathlib:
+        import pathlib
+        Path = pathlib.Path
+
 
     try:
         log.info("_cmd: %r" % cmd)
@@ -231,12 +218,20 @@ def pyline(iterable,
     # from itertools import imap, repeat
     # j = lambda args: imap(str, izip_longest(args, repeat(odelim)))
 
+    i_last = None
+    if 'i_last' in cmd:
+        # Consume the whole file into a list (to count lines)
+        iterable = list(iterable)
+        i_last = len(iterable)
+
+    pp = pprint.pformat
+
     for i, line in enumerate(iterable):
         l = line
         w = words = [w for w in line.strip().split(idelim)]
 
         p = path = None
-        if path_tools and line.rstrip():
+        if path_tools_pathpy or path_tools_pathlib and line.rstrip():
             try:
                 p = path = Path(line.strip()) or None
             except Exception as e:
@@ -288,8 +283,7 @@ def sort_by(sortstr, nl, reverse=False):
     columns = get_list_from_str(sortstr)
     log.debug("columns: %r" % columns)
 
-    get_columns = operator.itemgetter(*columns)
-
+    # get_columns = operator.itemgetter(*columns)
     get_columns = itemgetter_default(columns, default=None)
 
     return sorted(nl,
@@ -508,10 +502,15 @@ def get_option_parser():
                    default=[],
                    help='Module name to import (default: []) see -p and -r')
 
-    prs.add_option('-p', '--path-tools',
-                   dest='path_tools',
+    prs.add_option('-p', '--pathpy',
+                   dest='path_tools_pathpy',
                    action='store_true',
-                   help='Create path objects from each ``line``')
+                   help='Create path.py objects (p) from each ``line``')
+
+    prs.add_option('--pathlib',
+                   dest='path_tools_pathlib',
+                   action='store_true',
+                   help='Create pathlib objects (p) from each ``line``')
 
     prs.add_option('-r', '--regex',
                    dest='regex',
@@ -557,32 +556,42 @@ def get_option_parser():
 
 def get_sort_function(opts):  # (sort_asc, sort_desc)
     # FIXME
+    if hasattr(opts, 'sort_asc'):
+        _sort_asc = opts.sort_asc
+        _sort_desc = opts.sort_desc
+    else:
+        _sort_asc = opts.get('sort_asc')
+        _sort_desc = opts.get('sort_desc')
+
     sortfunc = None
-    if opts.sort_asc:
-        logging.debug("sort_asc: %r" % opts.sort_asc)
+    if _sort_asc:
+        logging.debug("sort_asc: %r" % _sort_asc)
         if sortfunc is None:
-            sortfunc = (
-                lambda _output:
-                sort_by(opts.sort_asc,
-                        _output,
-                        reverse=False))
+            def sortfunc(_output):
+                return sort_by(
+                    _sort_asc,
+                    _output,
+                    reverse=False)
         else:
-            sortfunc = (
-                lambda _output:
-                sort_by(opts.sort_asc, sortfunc(_output)))
-    if opts.sort_desc:
-        logging.debug("sort_desc: %r" % opts.sort_desc)
+            def sortfunc(_output):
+                return sort_by(
+                    _sort_asc,
+                    sortfunc(_output),
+                    reverse=False)
+    if _sort_desc:
+        logging.debug("sort_desc: %r" % _sort_desc)
         if sortfunc is None:
-            sortfunc = (
-                lambda _output:
-                sort_by(opts.sort_desc,
-                        _output,
-                        reverse=True))
+            def sortfunc(_output):
+                return sort_by(
+                    _sort_desc,
+                    _output,
+                    reverse=True)
         else:
-            sortfunc = (
-                lambda _output:
-                sort_by(opts.sort_desc,
-                        sortfunc(_output)))
+            def sortfunc(_output):
+                return sort_by(
+                    _sort_desc,
+                    sortfunc(_output),
+                    reverse=True)
     return sortfunc
 
 
