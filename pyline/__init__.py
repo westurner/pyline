@@ -3,6 +3,6 @@
 
 __version__ = '0.1.5'
 
-import pyline.pyline
+import pyline
 
-__main__ = pyline.pyline.main()
+__main__ = pyline.main()
