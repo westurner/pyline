@@ -38,8 +38,9 @@ History
 
 0.0.1 (Unreleased)
 +++++++++++++++++++
+| Source: http://code.activestate.com/recipes/437932-pyline-a-grep-like-sed-like-command-line-tool/
+
 * Updated 2012.11.17, Wes Turner
 * Updated 2005.07.21, thanks to Jacob Oscarson
 * Updated 2006.03.30, thanks to Mark Eichin
 
-see: `<http://code.activestate.com/recipes/437932-pyline-a-grep-like-sed-like-command-line-tool/>`_
