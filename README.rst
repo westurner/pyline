@@ -80,23 +80,53 @@ What
 ======
 Pyline is an ordered `MapReduce`_ tool:
 
-Input Reader:
-    file, stdin (default)
+Input Readers:
+    * stdin (default)
+    * file (``codecs.open(file, 'r', encoding='utf-8')``)
 
-Map Function:
-    python command string, modules, regex, path tools
+Map Functions:
+    * Python module imports (``-m os``)
+    * Python regex pattern (``-r '\(.*\)'``)
+    * path library (``p`` from ``--pathpy`` OR ``--pathlib``)
+    * Python codeobj **eval** output transform:
+
+      .. code:: bash
+
+         ls | pyline -m os 'line and os.path.abspath(line.strip())'
+         ls | pyline -r '\(.*\)' 'rgx and (rgx.group(0), rgx.group(1)) or line'
+         ls | pyline -p 'p and p.abspath() or ("# ".format(line))'
+
+         # With an extra outer loop to bind variables in
+         # (because (_p = p.abspath(); <codeobj>) does not work)
+         find $PWD | pyline --pathpy -m os -m collections --input-delim='/' \
+             'p and [collections.OrderedDict((
+                     ("p", p),
+                     ("_p", _p),
+                     ("_p.split()", str(_p).split(os.path.sep)),
+                     ("line.rstrip().split()", line.rstrip().split(os.path.sep)),
+                     ("l.split()", l.split(os.path.sep)),
+                     ("words", words),
+                     ("w", w)))
+                 for _p in [p.abspath()]][0]' \
+                -O json
 
 Partition Function:
-    none
+    None
 
 Compare Function:
     ``Result(collections.namedtuple).__cmp__``
 
-Reduce Function:
-    ``bool() and sorted()``
+Reduce Functions:
+    ``bool()``,  ``sorted()``
 
-Output Writer:
+Output Writers:
     ``ResultWriter`` classes
+
+    .. code:: bash
+
+       pyline -O csv
+       pyline -O tsv
+       pyline -O json
 
 
 Installing
