@@ -3,6 +3,13 @@
 History
 =========
 
+0.3.2 (2010-11-30)
++++++++++++++++++++
+* DOC: pyline/pyline.py: docstrings, import path as pathpy
+* BUG: pyline/__init__.py: Set pyline.pyline.__main__ correctly
+  (so that ``python -m pyline.pyline --help`` works)
+* DOC: usage.rst: add :shell: option to 'pyline --help' output
+
 0.2.0 (2014-08-24)
 +++++++++++++++++++
 * BUG: add NullHandler to logger (closes #6)
@@ -38,8 +45,9 @@ History
 
 0.0.1 (Unreleased)
 +++++++++++++++++++
+| Source: http://code.activestate.com/recipes/437932-pyline-a-grep-like-sed-like-command-line-tool/
+
 * Updated 2012.11.17, Wes Turner
 * Updated 2005.07.21, thanks to Jacob Oscarson
 * Updated 2006.03.30, thanks to Mark Eichin
 
-see: `<http://code.activestate.com/recipes/437932-pyline-a-grep-like-sed-like-command-line-tool/>`_
