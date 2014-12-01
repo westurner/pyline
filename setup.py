@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+"""
+pyline setup.py
+"""
 
 import glob
 import logging
 import os
 import subprocess
 import sys
-
 
 try:
     from setuptools import setup, Command
@@ -71,7 +73,7 @@ def build_long_description():
 
 setup(
     name='pyline',
-    version='0.3.1',
+    version='0.3.2',
     description=(
         'A grep-like, sed-like command-line tool for line-based '
         'processing in Python.'),
