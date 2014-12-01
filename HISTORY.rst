@@ -3,6 +3,13 @@
 History
 =========
 
+0.3.2 (2010-11-30)
++++++++++++++++++++
+* DOC: pyline/pyline.py: docstrings, import path as pathpy
+* BUG: pyline/__init__.py: Set pyline.pyline.__main__ correctly
+  (so that ``python -m pyline.pyline --help`` works)
+* DOC: usage.rst: add :shell: option to 'pyline --help' output
+
 0.2.0 (2014-08-24)
 +++++++++++++++++++
 * BUG: add NullHandler to logger (closes #6)
