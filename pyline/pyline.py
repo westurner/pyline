@@ -5,16 +5,22 @@ from __future__ import print_function
 
 **pyline**
 
-A simple UNIX tool for line-based processing in Python.
+Pyline is a UNIX command-line tool for
+line-based processing in Python
+with regex and output transform features
+similar to grep, sed, and awk.
 
 Features:
 
-* Python str.split by a delimiter (``-F``)
+* Python ``str.split()`` by a delimiter (``-F``)
 * Python Regex (``-r``, ``--regex``, ``-R``, ``--regex-options``)
-* Output as txt, csv, ttsv, json (``-O``, ``-output-filetype``)
-* (Lazy) sorting (``-s``, ``--sort-asc``, ``-S``, ``--sort-desc``)
-* Create Path.py (or pathlib) objects from each line (``-p``)
-* namedtuples, ``yield``ing generators
+* Output as ``txt``, ``csv``, ``tsv``, ``json``, ``html``
+  (``-O|--output-filetype=csv``)
+* Output as Markdown/ReStructuredText ``checkbox`` lists
+  (``-O|--output-filetype=checkbox``)
+* (Lazy) sorting (``-s``, ``--sort-asc``, ``-S``, ``--sort-desc``) # XXX TODO
+* Path.py or pathlib objects from each line (``-p``)
+* ``namedtuple``s, ``yield``ing generators
 
 **Usage**
 
@@ -41,7 +47,7 @@ Shell::
     pyline.py -f ~/.bashrc 'w[-1:]'
 
     # Regex matching with groups
-    cat ~/.bashrc | pyline.py -n -r '^#(.*)' 'rgx and rgx.group()'
+    cat ~/.bashrc | pyline.py -n -r '^#(.*)' 'rgx and (rgx.group(0), rgx.group(1))'
 
 
 """
@@ -188,12 +194,11 @@ def pyline(iterable,
 
     Path = str
     if path_tools_pathpy:
-        import path
-        Path = path.path
+        import path as pathpy
+        Path = pathpy.path
     if path_tools_pathlib:
         import pathlib
         Path = pathlib.Path
-
 
     try:
         log.info("_cmd: %r" % cmd)
@@ -229,6 +234,7 @@ def pyline(iterable,
     for i, line in enumerate(iterable):
         l = line
         w = words = [w for w in line.strip().split(idelim)]
+        rgx = _rgx and _rgx.match(line) or None
 
         p = path = None
         if path_tools_pathpy or path_tools_pathlib and line.rstrip():
@@ -237,8 +243,6 @@ def pyline(iterable,
             except Exception as e:
                 log.exception(e)
                 pass
-
-        rgx = _rgx and _rgx.match(line) or None
 
         # Note: eval
         try:
@@ -463,7 +467,21 @@ class ResultWriter_checkbox(ResultWriter):
 def get_option_parser():
     import optparse
     prs = optparse.OptionParser(
-        usage="%prog: [options] \"<command>\"",
+        usage=(
+        "%prog [-f<path>] [-o|--output-file=<path>] \n"
+        "              [-F|--input-delim='\\t'] \n"
+        "              [-d|--output-delimiter='||'] \n"
+        "              [-n|--number-lines] \n"
+        "              [-m|--modules=<mod2>] \n"
+        "              [-p|--pathpy] [--pathlib] \n"
+        "              [-r '<rgx>'|--regex='<rgx>'] \n"
+        "              '<commandstr>'"
+        ),
+        description=(
+            "Pyline is a UNIX command-line tool for line-based processing "
+            "in Python with regex and output transform features "
+            "similar to grep, sed, and awk."
+            ),
         epilog=EPILOG)
 
     prs.add_option('-f',
@@ -481,7 +499,8 @@ def get_option_parser():
                    dest='output_filetype',
                    action='store',
                    default='txt',
-                   help="Output filetype <txt|csv|tsv|json> (default: txt)")
+                   help=("Output filetype <txt|csv|tsv|json|checkbox|html> "
+                         "(default: txt)"))
 
     prs.add_option('-F', '--input-delim',
                    dest='idelim',
