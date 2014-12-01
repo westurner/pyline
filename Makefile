@@ -42,7 +42,7 @@ coverage:
 docs:
 	rm -f docs/pyline.rst
 	rm -f docs/modules.rst
-	sphinx-apidoc -o docs/ pyline
+	sphinx-apidoc --no-toc -o docs/ pyline
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
 	#open docs/_build/html/index.html
