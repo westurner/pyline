@@ -27,7 +27,6 @@ Features:
 Shell::
 
     pyline.py --help
-    pyline.py --test
 
     # Print every line (null transform)
     cat ~/.bashrc | pyline.py line
@@ -566,9 +565,6 @@ def get_option_parser():
     prs.add_option('-q', '--quiet',
                    dest='quiet',
                    action='store_true',)
-    prs.add_option('-t', '--test',
-                   dest='run_tests',
-                   action='store_true',)
 
     return prs
 
@@ -629,12 +625,6 @@ def main(*args):
         if opts.verbose:
             logging.getLogger().setLevel(logging.DEBUG)
             logging.debug(opts.__dict__)
-
-    if opts.run_tests:
-        import sys
-        sys.argv = [sys.argv[0]] + args
-        import unittest
-        exit(unittest.main())
 
     sortfunc = get_sort_function(opts)
 
