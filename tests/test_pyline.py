@@ -24,6 +24,26 @@ And Without
 http://localhost/path/to/file?query#fragment
 
 """
+
+
+TEST_INPUT_A0 = """a 5
+b 4
+c 3
+d 2
+e 1
+f 0
+"""
+
+TEST_OUTPUT_A0_SORT_ASC_0 = TEST_INPUT_A0
+TEST_OUTPUT_A0_SORT_DESC_0 = """f 0
+e 1
+d 2
+c 3
+b 4
+a 5
+"""
+TEST_OUTPUT_A0_SORT_ASC_1 = TEST_OUTPUT_A0_SORT_DESC_0
+
 import logging
 import tempfile
 import os
@@ -67,6 +87,50 @@ class TestPyline(unittest.TestCase):
             for line in pyline.pyline(io.StringIO(TEST_INPUT), **test):
                 print(line, file=_test_output)
 
+    def test_15_pyline_sort(self):
+        def split_to_words(s):
+            return [x.split() for x in s.splitlines()]
+        PYLINE_TESTS = (
+            ({"cmd": "line", "sort_asc": "0"},
+             TEST_OUTPUT_A0_SORT_ASC_0),
+            ({"cmd": "words", "sort_asc": "0"},
+             split_to_words(TEST_OUTPUT_A0_SORT_ASC_0)),
+
+            ({"cmd": "words", "sort_asc": "1"},
+             split_to_words(TEST_OUTPUT_A0_SORT_ASC_1)),
+
+            # TODO: AssertRaises ? output w/ cmd "line" undef.
+
+            # ({"cmd": "line", "sort_asc": "2"},
+            # TEST_OUTPUT_A0_SORT_ASC_1),
+
+            #({"cmd": "line", "sort_desc": "0"},
+             #TEST_OUTPUT_A0_SORT_DESC_0),
+            # ({"cmd": "words", "sort_desc": "0"},
+            # split_to_words(TEST_OUTPUT_A0_SORT_DESC_0)),
+
+            #{"cmd": "words"},
+            #{"cmd": "w[:3]"},
+            #{"regex": r"(.*)"},
+            #{"regex": r"(.*)", "cmd": "rgx and rgx.groups()"},
+            #{"regex": r"(.*)", "cmd": "rgx and rgx.groups() or '#'"},
+        )
+        _test_output = sys.stdout
+        for kwargs, expected_output in PYLINE_TESTS:
+            print(kwargs)
+            output = list(pyline.pyline(io.StringIO(TEST_INPUT_A0), **kwargs))
+            if isinstance(expected_output, basestring):
+                expected_io = io.StringIO(expected_output)
+            for result, expected_line in zip(output, expected_io):
+                # strip trailing newline
+                # _output_line = output_line.result[:-1]
+                output_line = result.result
+                print("out:", repr(output_line), file=_test_output)
+                print("exp:", repr(expected_line), file=_test_output)
+                print('-- output --')
+                print(output)
+                self.assertEqual(output_line, expected_line)
+
     def test_20_pyline_main(self):
         CMDLINE_TESTS = (
             tuple(),
@@ -77,6 +141,7 @@ class TestPyline(unittest.TestCase):
             ("words",),
             ("w",),
             ("w", "-n"),
+            ("w", "--shlex"),
             ("w", '-O', 'csv'),
             ("w", '-O', 'csv', '-n'),
 
