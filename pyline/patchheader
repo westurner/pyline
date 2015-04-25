@@ -1,0 +1,7 @@
+
+* BUG: Default to unicode w/ codecs.open, .getreader, .getwriter
+  
+  (fix problem with Python 2 cat pipes when the locale is unset)
+
+* ENH: Add shlex.split
+* BUG,TST: Fix sorting of words

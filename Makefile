@@ -42,12 +42,12 @@ coverage:
 docs:
 	rm -f docs/pyline.rst
 	rm -f docs/modules.rst
-	sphinx-apidoc -o docs/ pyline
+	sphinx-apidoc --no-toc -o docs/ pyline
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
 	#open docs/_build/html/index.html
 
-release: clean
+release: dist
 	#	 ver=v0.1.1
 	## update HISTORY.txt
 	#    release date
@@ -73,13 +73,15 @@ release: clean
 	## register with pypi
 	#    python setup.py build register
 	## generate a source distribution and upload to pypi
-	python setup.py sdist upload
 	#python setup.py bdist_wheel upload
 
 dist: clean
 	python setup.py sdist
 	python setup.py bdist_wheel
 	ls -l dist
+
+twine:
+	twine upload ./dist/*
 
 docs_rsync_to_local:
 	rsync -avr ./docs/_build/html/ $(_DOCSHTML)/pyline
