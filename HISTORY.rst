@@ -3,7 +3,15 @@
 History
 =========
 
-0.3.2 (2010-11-30)
+0.3.4 (2015-04-25)
++++++++++++++++++++
++ DOC: HISTORY.txt
+
+0.3.3 (2015-04-25)
++++++++++++++++++++
++ TST, BUG, CLN, DOC
+
+0.3.2 (2014-11-30)
 +++++++++++++++++++
 * DOC: pyline/pyline.py: docstrings, import path as pathpy
 * BUG: pyline/__init__.py: Set pyline.pyline.__main__ correctly
