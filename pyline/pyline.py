@@ -59,7 +59,6 @@ import collections
 import codecs
 import json
 import logging
-import operator
 import textwrap
 import pprint
 import shlex as _shlex
@@ -152,6 +151,7 @@ class PylineResult(Result):
 
 def pyline(iterable,
            cmd=None,
+           codefunc=None,
            col_map=None,
            modules=[],
            regex=None,
@@ -169,6 +169,7 @@ def pyline(iterable,
     Args:
         iterable (iterable): iterable of strings (e.g. sys.stdin or a file)
         cmd (str): python command string
+        codefunc (callable): alternative to cmd ``codefunc(locals())``
         modules ([str]): list of modules to import
         regex (str): regex pattern to match (with groups)
         regex_options (TODO): Regex options: I L M S X U (see ``pydoc re``)
@@ -219,14 +220,16 @@ def pyline(iterable,
         import pathlib
         Path = pathlib.Path
 
-    try:
-        log.info("_cmd: %r" % cmd)
-        codeobj = compile(cmd, 'command', 'eval')
-    except Exception as e:
-        e.message = "%s\ncmd: %s" % (e.message, cmd)
-        log.error(repr(cmd))
-        log.exception(e)
-        raise
+    codeobj = None
+    if cmd:
+        try:
+            log.info("_cmd: %r" % cmd)
+            codeobj = compile(cmd, 'command', 'eval')
+        except Exception as e:
+            e.message = "%s\ncmd: %s" % (e.message, cmd)
+            log.error(repr(cmd))
+            log.exception(e)
+            raise
 
     def item_keys(obj, keys):
         if isinstance(keys, (str, unicode)):
@@ -260,6 +263,7 @@ def pyline(iterable,
         def splitfunc(line):
             return line.strip().split(idelim, idelim_split_max)
 
+    global_ctxt = globals()
     for i, line in enumerate(iterable):
         l = line
         w = words = [_w for _w in splitfunc(line)]
@@ -272,10 +276,14 @@ def pyline(iterable,
             except Exception as e:
                 log.exception(e)
                 pass
-
-        # Note: eval
         try:
-            result = eval(codeobj, globals(), locals())  # ...
+            if codeobj:
+                # Note: eval
+                result = eval(codeobj, global_ctxt, locals())  # ...
+            elif codefunc:
+                ctxt = global_ctxt.copy()
+                ctxt.updaate(locals())
+                result = codefunc(ctxt)
         except Exception as e:
             e.cmd = cmd
             log.exception(repr(cmd))
