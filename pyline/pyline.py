@@ -68,7 +68,8 @@ from collections import namedtuple
 
 EPILOG = __doc__  # """  """
 
-REGEX_DOC = """I  IGNORECASE  Perform case-insensitive matching.
+REGEX_DOC = """
+I  IGNORECASE  Perform case-insensitive matching.
 L  LOCALE      Make \w, \W, \b, \B, dependent on the current locale.
 M  MULTILINE   "^" matches the beginning of lines (after a newline)
                 as well as the string.
@@ -80,7 +81,7 @@ U  UNICODE     Make \w, \W, \b, \B, dependent on the Unicode locale."""
 REGEX_OPTIONS = dict(
     (l[0],
         (l[1:14].strip(), l[15:]))
-    for l in REGEX_DOC.split('\n'))
+    for l in REGEX_DOC.split('\n') if l)
 
 STANDARD_REGEXES = {}
 
@@ -607,68 +608,60 @@ def get_option_parser():
                    dest='file',
                    action='store',
                    default='-',
-                   help="Input file (default: '-' for stdin)")
-
-    prs.add_option('-o', '--output-file',
-                   dest='output',
-                   action='store',
-                   default='-',
-                   help="Output file (default: '-' for stdout)")
-    prs.add_option('-O', '--output-filetype',
-                   dest='output_filetype',
-                   action='store',
-                   default='txt',
-                   help=("Output filetype <txt|csv|tsv|json|checkbox|html> "
-                         "(default: txt)"))
+                   help="Input file  #default: '-' for stdin")
 
     prs.add_option('-F', '--input-delim',
                    dest='idelim',
                    action='store',
                    default=None,
-                   help=('Strings input field delimiter to split line'
-                         ' into ``words`` by'
-                         ' (default: None (whitespace)``'))
-    prs.add_option('--input-delim-split-max',
+                   help=('words = line.split(-F)'
+                         '  #default: None (whitespace)'))
+    prs.add_option('--max', '--input-delim-split-max',
                    dest='idelim_split_max',
                    action='store',
                    default=-1,
                    type=int,
-                   help='words = line.strip().split(idelim, idelim_split_max)')
+                   help='words = line.split(-F, --max)')
     prs.add_option('--shlex',
                    action='store_true',
                    help='words = shlex.split(line)')
 
+    prs.add_option('-o', '--output-file',
+                   dest='output',
+                   action='store',
+                   default='-',
+                   help="Output file  #default: '-' for stdout")
     prs.add_option('-d', '--output-delim',
                    dest='odelim',
                    default="\t",
-                   help=('String output delimiter for lists and tuples'
-                         ' (default: \t (tab))``'))
-
-    prs.add_option('-m', '--modules',
-                   dest='modules',
-                   action='append',
-                   default=[],
-                   help='Module name to import (default: []) see -p and -r')
-
+                   help='String output delimiter for lists and tuples'
+                        '''  #default: '\\t' (tab, chr(9), $'\\t')''')
+    prs.add_option('-O', '--output-filetype',
+                   dest='output_filetype',
+                   action='store',
+                   default='txt',
+                   help=("Output filetype <txt|csv|tsv|json|checkbox|html> "
+                         "  #default: txt"))
     prs.add_option('-p', '--pathpy',
                    dest='path_tools_pathpy',
                    action='store_true',
-                   help='Create path.py objects (p) from each ``line``')
+                   help='p = path.Path(line); import path  '
+                        ' #pip install path.py')
 
     prs.add_option('--pathlib',
                    dest='path_tools_pathlib',
                    action='store_true',
-                   help='Create pathlib objects (p) from each ``line``')
+                   help=('p = pathlib.Path(line); import pathlib'))
 
     prs.add_option('-r', '--regex',
                    dest='regex',
                    action='store',
-                   help='Regex to compile and match as ``rgx``')
+                   help='rgx = re.compile(-r).match(line)')
     prs.add_option('-R', '--regex-options',
                    dest='regex_options',
                    action='store',
-                   default='im',
-                   help='Regex options: I L M S X U (see ``pydoc re``)')
+                   default='',
+                   help='Regex options: I L M S X U (ref: `$ pydoc re`)')
 
     prs.add_option('--cols',
                    dest='col_mapstr',
@@ -678,16 +671,23 @@ def get_option_parser():
     prs.add_option("-s", "--sort-asc",
                    dest="sort_asc",
                    action='store',
-                   help="Sort Ascending by field number")
+                   help=("sorted(lines, key=itemgetter(*-s))"))
     prs.add_option("-S", "--sort-desc",
                    dest="sort_desc",
                    action='store',
-                   help="Reverse the sort order")
+                   help=("sorted(lines, key=itemgetter(*-S), reverse=True)"))
 
     prs.add_option('-n', '--number-lines',
                    dest='number_lines',
                    action='store_true',
                    help='Print line numbers of matches')
+
+
+    prs.add_option('-m', '--modules',
+                   dest='modules',
+                   action='append',
+                   default=[],
+                   help='for m in modules: import m  #default: []')
 
     prs.add_option('-i', '--ipython',
                    dest='start_ipython',
