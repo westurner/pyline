@@ -50,6 +50,24 @@ Shell::
     cat ~/.bashrc | pyline.py -n -r '^#(.*)' \
         'rgx and (rgx.group(0), rgx.group(1))'
 
+    # Call a module function
+    cat > pf.py << EOF
+    def backwards(line):
+        return line[::-1]
+    EOF
+    echo "wrd.nu" | pyline -m pf 'pf.backwards(l)'
+
+.. note:: This file should only import from the standard library
+    so that it is vendorable by copying one file::
+
+    .. code:: bash
+
+        # pip install pyline
+        pyline      # -> pyline:main entry_point
+
+        # vendored as pyline.py
+        cp ./pyline.py ${__DOTFILES}/scripts/pyline.py
+        pyline.py   # -> ${__DOTFILES}/scripts/pyline.py
 
 """
 
@@ -681,7 +699,6 @@ def get_option_parser():
                    dest='number_lines',
                    action='store_true',
                    help='Print line numbers of matches')
-
 
     prs.add_option('-m', '--modules',
                    dest='modules',
