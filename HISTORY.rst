@@ -3,6 +3,13 @@
 History
 =========
 
+0.3.5 (2015-05-24)
++++++++++++++++++++
+* BUG,DOC: pyline.py: set default regex_options to '', optparse helpstrings [fa9e9cb]
+* ENH: pyline.py: add a codefunc() kwarg [be8dcc8]
+* ENH,TST: pyline.py: add a codefunc() kwarg [91aa0a8]
+* DOC: pyline.py: docstrings (calling a function, stdlib/vendoring) [ee22e2c]
+
 0.3.4 (2015-04-25)
 +++++++++++++++++++
 + DOC: HISTORY.txt
