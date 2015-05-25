@@ -193,6 +193,15 @@ class TestPyline(unittest.TestCase):
                 self.log.exception(e)
                 raise
 
+    def test_30_pyline_codefunc(self):
+        codefunc = lambda x: x['line'][::-1]
+        iterable = ["one", "two"]
+        outrable = ["eno", "owt"]
+        output = pyline.pyline(iterable, codefunc=codefunc)
+        self.assertTrue(hasattr(output, 'next'))
+        output_list = [result.result for result in output]
+        self.assertEqual(output_list, outrable)  # ...
+
 
 if __name__ == '__main__':
     unittest.main()

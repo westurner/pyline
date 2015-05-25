@@ -222,15 +222,6 @@ def pyline(iterable,
         log.debug("_rgx = %r" % _regexstr)
         _rgx = re.compile(_regexstr)
 
-    if cmd is None:
-        if regex:
-            cmd = "rgx and rgx.groups()"
-            # cmd = "rgx and rgx.groupdict()"
-        else:
-            cmd = "line"
-        if path_tools_pathpy or path_tools_pathlib:
-            cmd = "p"
-
     Path = str
     if path_tools_pathpy:
         import path as pathpy
@@ -238,6 +229,15 @@ def pyline(iterable,
     if path_tools_pathlib:
         import pathlib
         Path = pathlib.Path
+
+    if cmd is None and codefunc is None:
+        if regex:
+            cmd = "rgx and rgx.groups()"
+            # cmd = "rgx and rgx.groupdict()"
+        else:
+            cmd = "line"
+        if path_tools_pathpy or path_tools_pathlib:
+            cmd = "p"
 
     codeobj = None
     if cmd:
@@ -268,7 +268,7 @@ def pyline(iterable,
     # j = lambda args: imap(str, izip_longest(args, repeat(odelim)))
 
     i_last = None
-    if 'i_last' in cmd:
+    if cmd and 'i_last' in cmd:
         # Consume the whole file into a list (to count lines)
         iterable = list(iterable)
         i_last = len(iterable)
@@ -301,7 +301,7 @@ def pyline(iterable,
                 result = eval(codeobj, global_ctxt, locals())  # ...
             elif codefunc:
                 ctxt = global_ctxt.copy()
-                ctxt.updaate(locals())
+                ctxt.update(locals())
                 result = codefunc(ctxt)
         except Exception as e:
             e.cmd = cmd
