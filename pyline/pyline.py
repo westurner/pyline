@@ -625,7 +625,7 @@ def get_option_parser():
             ),
         epilog=EPILOG)
 
-    prs.add_option('-f',
+    prs.add_option('-f', '--in', '--input-file',
                    dest='file',
                    action='store',
                    default='-',
@@ -647,7 +647,7 @@ def get_option_parser():
                    action='store_true',
                    help='words = shlex.split(line)')
 
-    prs.add_option('-o', '--output-file',
+    prs.add_option('-o', '--out', '--output-file',
                    dest='output',
                    action='store',
                    default='-',
