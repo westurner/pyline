@@ -286,8 +286,8 @@ def pyline(iterable,
                 return line
 
     global_ctxt = globals()
-    for i, line in enumerate(iterable):
-        l = line
+    for i, obj in enumerate(iterable):
+        l = line = o = obj
         w = words = [_w for _w in splitfunc(line)]
         rgx = _rgx and _rgx.match(line) or None
 
@@ -791,7 +791,7 @@ def main(args=None, iterable=None, output=None):
             else:
                 cmd = 'rgx and rgx.groups()'
         else:
-            cmd = 'line'
+            cmd = 'obj'
 
     cmd = cmd.strip()
     opts.cmd = cmd
