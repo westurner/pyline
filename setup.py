@@ -88,8 +88,7 @@ setup(
     package_dir={'pyline':
                  'pyline'},
     include_package_data=True,
-    install_requires=[
-    ],
+    install_requires=[],
     license="PSF",
     zip_safe=False,
     keywords='pyline sed grep',
