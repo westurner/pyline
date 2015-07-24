@@ -777,7 +777,7 @@ def main(args=None, iterable=None, output=None):
             logging.getLogger().setLevel(logging.DEBUG)
             logging.debug(opts.__dict__)
 
-    col_map = {}
+    col_map = collections.OrderedDict()
     if opts.col_mapstr:
         col_map = build_column_map(opts.col_mapstr)
 
@@ -855,6 +855,8 @@ def main(args=None, iterable=None, output=None):
 
         if opts._output != '-' and hasattr(opts._output, 'close'):
             opts._output.close()
+
+    return 0
 
 
 if __name__ == "__main__":
