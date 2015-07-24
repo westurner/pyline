@@ -1,0 +1,6 @@
+nose
+
+nose-parameterized
+#-e git+https://github.com/wolever/nose-parameterized#egg=nose-parameterized
+
+nose-progressive
