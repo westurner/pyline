@@ -18,7 +18,7 @@ Features:
 * Output as ``txt``, ``csv``, ``tsv``, ``json``, ``html``
   (``-O|--output-filetype=csv``)
 * Output as Markdown/ReStructuredText ``checkbox`` lists
-  (``-O|--output-filetype=checkbox``)
+  (``-O|--output-filetype=checkbok``)
 * (Lazy) sorting (``-s``, ``--sort-asc``, ``-S``, ``--sort-desc``) # XXX TODO
 * Path.py or pathlib objects from each line (``-p``)
 * ``namedtuple``s, ``yield``ing generators
@@ -496,7 +496,7 @@ class ResultWriter(object):
             writer = ResultWriter_json(_output)
         elif output_filetype == "html":
             writer = ResultWriter_html(_output, **kwargs)
-        elif output_filetype == "checkbox":
+        elif output_filetype in ("checkbox", "chk"):
             writer = ResultWriter_checkbox(_output, **kwargs)
         else:
             raise NotImplementedError()
@@ -661,7 +661,7 @@ def get_option_parser():
                    dest='output_filetype',
                    action='store',
                    default='txt',
-                   help=("Output filetype <txt|csv|tsv|json|checkbox|html> "
+                   help=("Output filetype <txt|csv|tsv|json|checkbox|chk|html> "
                          "  #default: txt"))
     prs.add_option('-p', '--pathpy',
                    dest='path_tools_pathpy',
