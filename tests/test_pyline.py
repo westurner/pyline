@@ -83,8 +83,9 @@ class TestPyline(unittest.TestCase):
             {"regex": r"(.*)", "cmd": "rgx and rgx.groups() or '#'"},
         )
         _test_output = sys.stdout
+        _test_input = io.StringIO(TEST_INPUT)
         for test in PYLINE_TESTS:
-            for line in pyline.pyline(io.StringIO(TEST_INPUT), **test):
+            for line in pyline.pyline(_test_input, **test):
                 print(line, file=_test_output)
 
     def test_15_pyline_sort(self):
@@ -118,9 +119,13 @@ class TestPyline(unittest.TestCase):
         _test_output = sys.stdout
         for kwargs, expected_output in PYLINE_TESTS:
             print(kwargs)
-            output = list(pyline.pyline(io.StringIO(TEST_INPUT_A0), **kwargs))
+            input_ = io.StringIO(TEST_INPUT_A0)
+            #expected_io = io.StringIO()
             if isinstance(expected_output, basestring):
                 expected_io = io.StringIO(expected_output)
+            else:
+                expected_io = expected_output
+            output = list(pyline.pyline(input_, **kwargs))
             for result, expected_line in zip(output, expected_io):
                 # strip trailing newline
                 # _output_line = output_line.result[:-1]
@@ -159,6 +164,7 @@ class TestPyline(unittest.TestCase):
             ("w", '-O', 'html'),
 
             ("w", '-O', 'checkbox'),
+            ("w", '-O', 'chk'),
 
             ("len(words) > 2 and words",),
 
@@ -185,7 +191,7 @@ class TestPyline(unittest.TestCase):
             _args = TEST_ARGS + argset
             self.log.debug("main%s" % str(_args))
             try:
-                output = pyline.main(*_args)
+                output = pyline.main(_args)
                 for n in output and output or []:
                     self.log.debug(n)
             except Exception as e:
