@@ -71,6 +71,8 @@ Shell::
 
 """
 
+__version__ = version = "0.3.6"
+
 import cgi
 import csv
 import collections
