@@ -3,6 +3,10 @@
 History
 =========
 
+0.3.6 (2015-12-21)
+++++++++++++++++++++
+* BUG: pyline.py: #!/usr/bin/env python2 [9729816]
+
 0.3.5 (2015-05-24)
 +++++++++++++++++++
 * BUG,DOC: pyline.py: set default regex_options to '', optparse helpstrings [fa9e9cb]
