@@ -26,23 +26,31 @@ http://localhost/path/to/file?query#fragment
 """
 
 
-TEST_INPUT_A0 = """a 5
-b 4
-c 3
-d 2
-e 1
-f 0
+TEST_INPUT_A0 = """a 5 300
+b 4 300
+c 3 200
+d 2 100
+e 1 500
+f 0 300
 """
 
 TEST_OUTPUT_A0_SORT_ASC_0 = TEST_INPUT_A0
-TEST_OUTPUT_A0_SORT_DESC_0 = """f 0
-e 1
-d 2
-c 3
-b 4
-a 5
+TEST_OUTPUT_A0_SORT_DESC_0 = """f 0 300
+e 1 500
+d 2 100
+c 3 200
+b 4 300
+a 5 300
 """
 TEST_OUTPUT_A0_SORT_ASC_1 = TEST_OUTPUT_A0_SORT_DESC_0
+
+TEST_OUTPUT_A0_SORT_ASC_2 = """d 2 100
+c 3 200
+a 5 300
+b 4 300
+f 0 300
+e 1 500
+"""
 
 import logging
 import tempfile
@@ -101,8 +109,8 @@ class TestPyline(unittest.TestCase):
 
             # TODO: AssertRaises ? output w/ cmd "line" undef.
 
-            # ({"cmd": "line", "sort_asc": "2"},
-            # TEST_OUTPUT_A0_SORT_ASC_1),
+            ({"cmd": "line", "sort_asc": "2"},
+             split_to_words(TEST_OUTPUT_A0_SORT_ASC_2)),
 
             #({"cmd": "line", "sort_desc": "0"},
              #TEST_OUTPUT_A0_SORT_DESC_0),
