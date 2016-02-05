@@ -624,7 +624,7 @@ def get_option_parser():
         usage=(
             "%prog [-f<path>] [-o|--output-file=<path>] \n"
             "              [-F|--input-delim='\\t'] \n"
-            "              [--input-delim-split-max=3] \n"
+            "              [--max|--max-split=3] \n"
             "              [-d|--output-delimiter='||'] \n"
             "              [-n|--number-lines] \n"
             "              [-m|--modules=<mod2>] \n"
@@ -651,7 +651,7 @@ def get_option_parser():
                    default=None,
                    help=('words = line.split(-F)'
                          '  #default: None (whitespace)'))
-    prs.add_option('--max', '--input-delim-split-max',
+    prs.add_option('--max', '--input-delim-split-max', '--max-split',
                    dest='idelim_split_max',
                    action='store',
                    default=-1,
