@@ -191,6 +191,7 @@ def pyline(iterable,
         iterable (iterable): iterable of strings (e.g. sys.stdin or a file)
         cmd (str): python command string
         codefunc (callable): alternative to cmd ``codefunc(locals())``
+        col_map (None or OrderedDict): a column-key to type-callable mapping
         modules ([str]): list of modules to import
         regex (str): regex pattern to match (with groups)
         regex_options (TODO): Regex options: I L M S X U (see ``pydoc re``)
@@ -371,7 +372,7 @@ def parse_column_map(col_mapstr, default=unicode):
 def build_column_map(col_map):
     """
     Args:
-        col_map (str or dict): col_mapstr or a dict
+        col_map (str or OrderedDict): a col_mapstr column-key to type-callable mapping
     Returns:
         dict: or OrderedDict of (col, type_func) mappings
     """
@@ -399,20 +400,22 @@ def get_list_from_str(str_, idelim=',', typefunc=int):
     return [typefunc(x.strip()) for x in str_.split(idelim)]
 
 
-def sort_by(sortstr, iterable,
+def sort_by(sortstr,
+            iterable,
             reverse=False,
             col_map=None,
             default_type=None,
             default_value=None):
-    """
-    Arguments:
+    """sort an iterable, cast to ``col_map.get(colkey, default_type)``,
+    and default to ``default_value``.
+
+    Args:
         sortstr (str): sort string (comma separated list of column numbers)
         iterable (iterable): iterable of lines/rows
-
-    Keyword Arguments:
+    Kwargs:
         reverse (bool): True to sort in reverse
-        col_map (dict): dict mapping column n to a typefunc (default: None)
-        default_type (callable): type callable (default: None)
+        col_map (None, dict): dict mapping column n to a typefunc (default: None)
+        default_type (None, callable): type callable (default: None)
         default_value (\*): default N/A value for columns not specified
                             in col_map (default: None)
 
