@@ -634,7 +634,8 @@ def get_option_parser():
             "              [-m|--modules=<mod2>] \n"
             "              [-p|--pathpy] [--pathlib] \n"
             "              [-r '<rgx>'|--regex='<rgx>'] \n"
-            "              '<commandstr>'"
+            "              '<python_expression>' \n"
+            "\n"
         ),
         description=(
             "Pyline is a UNIX command-line tool for line-based processing "
@@ -771,14 +772,28 @@ def get_sort_function(opts, col_map=None):  # (sort_asc, sort_desc)
     return sortfunc
 
 
-def main(args=None, iterable=None, output=None):
-    """
-    pyline.main function
+def main(args=None, iterable=None, output=None, results=None):
+    """parse args, process iterable, write to output, return a returncode
 
-    Args:
-        *args (str[]): list of commandline arguments
+    ``pyline.main`` function
+
+    Kwargs:
+        args (None or list[str]): list of commandline arguments (``--help``)
+        iterable (None or iterable[object{str,}]): iterable of objects
+        output (object:write): a file-like object with a ``.write`` method
+        results (None or object:append): if not None, append results here
     Returns:
         int: nonzero on error
+
+    Raises:
+        OptParseError: optparse.parse_args(args) may raise
+
+    .. code::
+
+        import pyline
+        pyline.main(['-v', 'l and l[1]'], ['one 1', 'two 2', 'three 3'])
+        pyline.main(['-v', 'w and w[1]'], ['one 1', 'two 2', 'three 3'])
+
     """
     import logging
     import sys
