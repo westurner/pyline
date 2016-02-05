@@ -497,7 +497,7 @@ class ResultWriter(object):
         output_filetype = filetype.strip().lower()
 
         if output_filetype not in ResultWriter.OUTPUT_FILETYPES:
-            raise Exception()
+            raise ValueError("output_filetype: %r" % output_filetype)
 
         writer = None
         if output_filetype == "txt":
@@ -513,11 +513,15 @@ class ResultWriter(object):
         elif output_filetype in ("checkbox", "chk"):
             writer = ResultWriter_checkbox(_output, **kwargs)
         else:
-            raise NotImplementedError()
-        return (
-            writer,
-            (kwargs.get('number_lines')
-                and writer.write_numbered or writer.write))
+            raise ValueError("output_filetype: %r" % output_filetype)
+
+        output_func = None
+        if kwargs.get('number_lines'):
+            output_func = writer.write_numbered
+        else:
+            output_func = writer.write
+
+        return (writer, output_func)
 
 
 class ResultWriter_txt(ResultWriter):
