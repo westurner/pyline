@@ -1,4 +1,8 @@
-.PHONY: clean-pyc clean-build docs clean
+
+# Makefile
+APP=pyline
+
+.PHONY: help clean-pyc clean-build docs clean test test-all coverage docs release dist twine docs_rsync_to_local docs_rebuild
 
 help:
 	@echo "clean-build - remove build artifacts"
@@ -25,7 +29,7 @@ clean-pyc:
 	find . -name '*~' -exec rm -f {} +
 
 lint:
-	flake8 pyline tests
+	flake8 '$(APP)' tests
 
 test:
 	python setup.py test
@@ -34,18 +38,18 @@ test-all:
 	tox
 
 coverage:
-	coverage run --source pyline setup.py test
+	coverage run --source '$(APP)' setup.py test
 	coverage report -m
 	coverage html
 	open htmlcov/index.html
 
 docs:
-	rm -f docs/pyline.rst
+	rm -f docs/$(APP).rst
 	rm -f docs/modules.rst
-	sphinx-apidoc --no-toc -o docs/ pyline
+	sphinx-apidoc --no-toc -o docs/ '$(APP)'
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
-	#open docs/_build/html/index.html
+	@#$(MAKE) open docs/_build/html/index.html
 
 release: dist
 	#	 ver=v0.1.1
@@ -84,7 +88,7 @@ twine:
 	twine upload ./dist/*
 
 docs_rsync_to_local:
-	rsync -avr ./docs/_build/html/ $(_DOCSHTML)/pyline
+	rsync -avr ./docs/_build/html/ '$(_DOCSHTML)'/'$(APP)'
 
 docs_rebuild:
 	$(MAKE) docs

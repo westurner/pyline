@@ -81,7 +81,9 @@ import json
 import logging
 import textwrap
 import pprint
+import re
 import shlex as _shlex
+import sys
 
 
 from collections import namedtuple
@@ -106,7 +108,7 @@ REGEX_OPTIONS = dict(
 STANDARD_REGEXES = {}
 
 log = logging.getLogger()
-log.setLevel(logging.INFO)
+#log.setLevel(logging.INFO)
 log.setLevel(logging.DEBUG)
 
 
@@ -114,11 +116,12 @@ class NullHandler(logging.Handler):
     def emit(self, record):
         pass
 
+log.debug("DEBUG!")
 
-h = NullHandler()
-log.addHandler(h)
+#h = NullHandler()
+#log.addHandler(h)
 
-Result = namedtuple('Result', ('n', 'result'))
+Result = namedtuple('Result', ('n', 'result', 'uri', 'meta'))
 
 
 class PylineResult(Result):
@@ -169,11 +172,40 @@ class PylineResult(Result):
             odelim,
             unicode(odelim).join(str(x) for x in record))
 
+def debug(*args, **kwargs):
+    log_(*args, **kwargs)
+    raise Exception(args, kwargs)
+
+def log_(*args, **kwargs):
+    """log through to stdout and return what is passed in
+
+    .. code::
+
+        log(value) -> value
+        log(value, **kwargs) -> (value, kwargs)
+        log(value1, value2, **kwargs) -> ([value1, value2], kwargs)
+        log(value1, value2) -> [value1, value2]
+    """
+    log.debug((args, kwargs))
+    print((args, kwargs), file=sys.stderr)
+    if kwargs is None:
+        if len(args) == 1:
+            return args[0]
+        return args
+    else:
+        if args:
+            if len(args) == 1:
+                return args[0], kwargs
+            return args, kwargs
+        else:
+            return kwargs
 
 def pyline(iterable,
            cmd=None,
            codefunc=None,
            col_map=None,
+           uri=None,
+           meta=None,
            modules=[],
            regex=None,
            regex_options=None,
@@ -192,6 +224,8 @@ def pyline(iterable,
         cmd (str): python command string
         codefunc (callable): alternative to cmd ``codefunc(locals())``
         col_map (None or OrderedDict): a column-key to type-callable mapping
+        uri (None or str): uri of the current file (for PylineResult objs)
+        meta (None or str): uri of the current file (for PylineResult objs)
         modules ([str]): list of modules to import
         regex (str): regex pattern to match (with groups)
         regex_options (TODO): Regex options: I L M S X U (see ``pydoc re``)
@@ -208,12 +242,8 @@ def pyline(iterable,
         for _import in _importset.split(','):
             locals()[_import] = __import__(_import.strip())
 
-    def debug(*args, **kwargs):
-        raise Exception(args, kwargs)
-
     _rgx = None
     if regex:
-        import re
         _regexstr = regex
         if bool(regex_options):
             _regexstr = ("(?%s)" % (regex_options)) + _regexstr
@@ -282,11 +312,11 @@ def pyline(iterable,
         def splitfunc(line):
             return _shlex.split(line, posix=True)
     else:
-        def splitfunc(line):
-            if hasattr(line, 'strip'):
-                return line.strip().split(idelim, idelim_split_max)
+        def splitfunc(obj):
+            if hasattr(obj, 'strip'):
+                return obj.strip().split(idelim, idelim_split_max)
             else:
-                return line
+                return obj
 
     global_ctxt = globals()
     for i, obj in enumerate(iterable):
@@ -314,7 +344,73 @@ def pyline(iterable,
             log.exception(repr(cmd))
             log.exception(e)
             raise
-        yield PylineResult(i, result)
+        yield PylineResult(n=i, result=result, uri=uri, meta=meta)
+
+
+class OrderedDict_(collections.OrderedDict):
+    def keys(self):
+        return list(collections.OrderedDict.keys(self))
+
+    def values(self):
+        return list(collections.OrderedDict.values(self))
+
+
+# mock optparse.Options
+# alternative: s/opts.\([\w_]+\)/opts[\1]/g
+
+NONE = '____!____' #  ...
+
+from functools import partial # TODO sort to top
+
+class OrderedDict_Attrs(OrderedDict_):
+    def __getattribute__(self, *args, **kwargs):
+        """
+        - TODO: @wraps decorator
+        """
+        attr = args[0]
+        if attr.startswith('_OrderedDict_'):
+            method = getattr(OrderedDict_, '__getattribute__')
+        else:
+            default = kwargs.get('default', NONE)
+            if default is not NONE:
+                # kwargs = {'default': default}
+                args = (args, default)
+            #method = getattr(OrderedDict_, '__getitem__')
+            method = getattr(OrderedDict_, 'get')
+        return method(self, *args, **kwargs)
+
+    get = __getattribute__
+    getdefault = partial(__getattribute__, default=None)
+
+    def __setattr__(self, key, value):
+        if key.startswith('_OrderedDict_'):
+            method = getattr(OrderedDict_, '__setattr__')
+        else:
+            method = getattr(OrderedDict_, '__setitem__')
+            #partial(setattr, (key,value))
+        return method(self, key, value)
+
+    def __dict__(self):
+        return self
+
+
+# from collections import MutableMapping
+
+class PylineDatasource(object):
+    def __init__(self, **kwargs):
+        self.data = OrderedDict_()
+        self.data['uri'] = kwargs.get('uri')
+        self.data['meta'] = kwargs.get('meta', OrderedDict_)
+        self.data['resultsets'] = kwargs.get('resultsets', [])
+        results = kwargs.get('results')
+        if results is not None:
+            self.add_resultset(results)
+
+    def add_resultset(self, results):
+        if results is not None:
+            self.data['resultsets'].append(results)
+
+
 
 
 typestr_func_map = collections.OrderedDict((
@@ -342,47 +438,101 @@ typestr_func_map = collections.OrderedDict((
     ('unicode', unicode),
 ))
 
+COLSPECSTRRGX = re.compile('''::''')
 
-def parse_column_map(col_mapstr, default=unicode):
+def parse_colspecstr(colspecstr, default=unicode):
     """
 
     Args:
-        col_mapstr (str): e.g. "0,1,2,3" or "0,1,4:int"
+        colspecstr (str): e.g. "0,1,2,3" or "0,1,4::int"
 
     Keyword Arguments:
         default (callable): type casting callable
 
     Yields:
-        tuple: (col, type casting function)
+        tuple: (colkey, coltypefunc)
+
+    .. code::
+
+        ' '
+        0
+        0,1,2
+        2, 1, 0
+        2:int
+        0:str, 1:int, 2:int
+        0:int, 1:int, 2:int  # raises
+        0, 1, 2:int
+        2::int, 2::xsd:integer  #
+        #0:"xsd:string", 2:xsd:integer #
+        attr:"xsd:string", attr2:"xsd:integer" #
+
+        # - [ ] ENH: [rdflib] RDFa default context
+        # - [ ] ENH: shlex quote parsing after the split
 
     """
-    if not col_mapstr or not col_mapstr.strip():
+    if not colspecstr or not colspecstr.strip():
         return
-    for _col_typestr in col_mapstr.split(','):
-        type_func = default
-        x = col_typestr = _col_typestr.strip()
-        # parse column::datatype mappings
-        if '::' in col_typestr:
-            x, typestr = col_typestr.split('::', 1)
-            x, typestr = x.strip(), typestr.strip()
-            type_func = typestr_func_map.get(typestr, default)
-        yield (x, type_func)
+    # parse column::datatype mappings
+    for n, colspecstr_col_n in enumerate(colspecstr.split(',')):
+        colkeystr = None  # '0'
+        coltypefunc = default
+        # coltypestr = colspecstr_col_n.strip()
+        colspecstrrgx_split = COLSPECSTRRGX.split(
+            colspecstr_col_n,
+            maxsplit=1)
+        if len(colspecstrrgx_split) == 2:
+            colkeystr, coltypestr = colspecstrrgx_split
+        elif len(colspecstrrgx_split) == 1:
+            colkeystr = colspecstrrgx_split[0]
+        else:
+            raise ValueError(colspecstrrgx_split)
+
+        colkey = parse_field(colkeystr).strip()
+        coltypestr = parse_field(coltypestr).strip()
+        coltypefunc = typestr_func_map.get(coltypestr, default)
+        # raise Exception((colkey, coltypestr, coltypefunc))
+        yield (colkey, coltypefunc)
+
+SHLEXRGX = re.compile(r'''['"]+''') #
+
+def parse_field(colspecfieldstr, shlex=None):
+    """
+
+    Args:
+        str_ (basestring):
+        shlex (None or bool): default None: shlex if ' or ", if True shlex
+    """
+    if shlex is None:
+        matchobj = SHLEXRGX.match(colspecfieldstr)
+        shlex = bool(matchobj)
+    retval = None
+    if shlex:
+        shlexoutput = _shlex.split(colspecfieldstr, comments=False, posix=True)
+        if shlexoutput:
+            shlexword1 = shlexoutput[0]
+            retval =  shlexword1
+        else:
+            raise ValueError(colspecfieldstr)
+    else:
+        retval = colspecfieldstr
+    import pdb; pdb.set_trace()
+    return retval
 
 
-def build_column_map(col_map):
+def build_column_map(colspecstr):
     """
     Args:
-        col_map (str or OrderedDict): a col_mapstr column-key to type-callable mapping
+        colspecstr (str or OrderedDict): a colspecstrstr column-key to type-callable mapping
     Returns:
-        dict: or OrderedDict of (col, type_func) mappings
+        OrderedDict: (colkey, type_func) mappings "column_map" # TODO
     """
     #
-    if not col_map:
-        return {}
-    if hasattr(col_map, 'items'):
-        return col_map
+    if not colspecstr:
+        return collections.OrderedDict()
+    if hasattr(colspecstr, 'items'):
+        return colspecstr
     return collections.OrderedDict(
-        parse_column_map(col_map, default=unicode)
+        parse_colspecstr(colspecstr, default=unicode)
     )
 
 
@@ -400,8 +550,8 @@ def get_list_from_str(str_, idelim=',', typefunc=int):
     return [typefunc(x.strip()) for x in str_.split(idelim)]
 
 
-def sort_by(sortstr,
-            iterable,
+def sort_by(iterable,
+            sortstr=None,
             reverse=False,
             col_map=None,
             default_type=None,
@@ -410,43 +560,71 @@ def sort_by(sortstr,
     and default to ``default_value``.
 
     Args:
-        sortstr (str): sort string (comma separated list of column numbers)
         iterable (iterable): iterable of lines/rows
     Kwargs:
-        reverse (bool): True to sort in reverse
-        col_map (None, dict): dict mapping column n to a typefunc (default: None)
+        sortstr (None, str): comma separated list of column index (``1,2,3``)
+        reverse (bool): (True, Descending), (False, Ascending) default: False
+        col_map (None, dict): dict mapping column n to a typefunc
         default_type (None, callable): type callable (default: None)
         default_value (\*): default N/A value for columns not specified
                             in col_map (default: None)
-
     Returns:
         list: sorted list of lines/rows
     """
-    def keyfunc_iter(obj):
+    # raise Exception()
+    def keyfunc_iter(obj, sortstr=sortstr, col_map=col_map):
+        """Parse and yield column values according to ``sortstr`` and ``col_map``
+
+        Args:
+            obj (object): obj to sort (as from ``sorted(keyfunc=thisfunc)``)
+            sortstr (str): sort string of comma-separated columns
+            col_map (None, dict): dict mapping column n to a typefunc (default: None)
+        Yields:
+            object: typecasted column value
+        """
         if sortstr:
-            column_sequence = get_list_from_str(sortstr)
+            column_sequence = get_list_from_str(sortstr, typefunc=int)
         else:
-            column_sequence = xrange(len(obj))
+            column_sequence = xrange(len(obj.result))
+        log.debug(('column_sequence', column_sequence))
+        if col_map is None:
+            col_map = {}
         for n in column_sequence:
             type_func = col_map.get(str(n), default_type)
+            retval = default_value
             if n < len(obj.result):
+                colvalue = obj.result[n]
                 if type_func:
                     try:
-                        yield type_func(obj.result[n])
+                        retval = type_func(colvalue)
                     except ValueError as e:
-                        print(type_func, obj.result[n], e)
+                        e.msg += "\n" + repr((type_func, colvalue, e,))
                         raise
                 else:
-                    yield obj.result[n]
+                    retval = colvalue
             else:
-                yield default_value
+                retval = default_value
+            yield retval
 
-    def keyfunc(obj):
-        return list(keyfunc_iter(obj))
+    def keyfunc(obj, sortstr=sortstr, col_map=col_map):
+        """key function (e.g. for ``sorted(key=keyfunc)``)
 
-    return sorted(iterable,
+        Args:
+            obj (PylineResult): ``obj.result = ['col1', 'col2', 'coln']``
+        Returns:
+            tuple: (col2, col0, col1)
+        """
+        keyvalue = tuple(keyfunc_iter(obj, sortstr, col_map))
+        errdata = [
+            (('keyvalue', keyvalue),
+              ('sortstr', sortstr))]
+        log_((errdata,))
+        return keyvalue
+
+    sorted_values = sorted(iterable,
                   key=keyfunc,
                   reverse=reverse)
+    return sorted_values
 
 
 class ResultWriter(object):
@@ -523,8 +701,8 @@ class ResultWriter(object):
             output_func = writer.write_numbered
         else:
             output_func = writer.write
-
-        return (writer, output_func)
+        writer.output_func = output_func
+        return writer
 
 
 class ResultWriter_txt(ResultWriter):
@@ -638,7 +816,6 @@ def get_option_parser():
             "              [-p|--pathpy] [--pathlib] \n"
             "              [-r '<rgx>'|--regex='<rgx>'] \n"
             "              '<python_expression>' \n"
-            "\n"
         ),
         description=(
             "Pyline is a UNIX command-line tool for line-based processing "
@@ -746,36 +923,48 @@ def get_option_parser():
     return prs
 
 
-def get_sort_function(opts, col_map=None):  # (sort_asc, sort_desc)
-    # FIXME
-    if hasattr(opts, 'sort_asc'):
-        _sort_asc = opts.sort_asc
-        _sort_desc = opts.sort_desc
-    else:
-        _sort_asc = opts.get('sort_asc')
-        _sort_desc = opts.get('sort_desc')
+def get_sort_function(**kwargs):  # (sort_asc, sort_desc)
+    """
+    get a sort function from the given opts dict
 
-    sortstr = None
+    Args:
+        opts (dict): sort_asc:bool, sort_desc:bool
+    """
+    sortstr = kwargs.get('sortstr')
     sortfunc = None
-    if _sort_asc:
-        log.debug("sort_asc: %r" % _sort_asc)
-        sortstr = _sort_asc
+    reverse = None
+    col_map = kwargs.get('col_map')
+    sort_asc = kwargs.get('sort_asc')
+    sort_desc = kwargs.get('sort_desc')
+    if sort_asc and sort_desc:
+        raise ValueError("sort_asc and sort_desc are both specified")
+    if sort_asc:
+        sortstr = sort_asc
+        log.info("sort_asc: %r" % sortstr)
         reverse = False
-    if _sort_desc:
-        log.debug("sort_desc: %r" % _sort_desc)
-        sortstr = _sort_desc
+    if sort_desc:
+        sortstr = sort_desc
+        log.info("sort_desc: %r" % sortstr)
         reverse = True
     if sortstr:
-        def sortfunc(_output):
+        def sortfunc(iterable,
+                     sortstr=sortstr,
+                     reverse=reverse,
+                     col_map=col_map):
             return sort_by(
+                iterable,
                 sortstr,
-                _output,
                 reverse=reverse,
                 col_map=col_map)
+    else:
+        def null_sortfunc(iterable):
+            return iterable
+        sortfunc = null_sortfunc
+    # import pdb; pdb.set_trace()  # XXX BREAKPOINT
     return sortfunc
 
 
-def main(args=None, iterable=None, output=None, results=None):
+def main(args=None, iterable=None, output=None, results=None, opts=None):
     """parse args, process iterable, write to output, return a returncode
 
     ``pyline.main`` function
@@ -785,6 +974,7 @@ def main(args=None, iterable=None, output=None, results=None):
         iterable (None or iterable[object{str,}]): iterable of objects
         output (object:write): a file-like object with a ``.write`` method
         results (None or object:append): if not None, append results here
+        opts (None): if set, these preempt args and argument parsing
     Returns:
         int: nonzero on error
 
@@ -803,101 +993,130 @@ def main(args=None, iterable=None, output=None, results=None):
 
     prs = get_option_parser()
 
-    args = list(args) if args is not None else sys.argv[1:]
-    (opts, args) = prs.parse_args(args)
+    args = list(args) if args is not None else [] # sys.argv[1:]
+    if opts is None:
+        (opts, args) = prs.parse_args(args)
+    optsdict = None
+    if hasattr(opts, '__dict__'):
+        optsdict = opts.__dict__
+    elif hasattr(opts, 'items'):
+        optsdict = opts
+    else:
+        raise ValueError(opts)
+    if not optsdict:
+        optsdict = {}
+    opts = optsdict
 
-    if not opts.quiet:
-        logging.basicConfig()
+    log = logging.getLogger()
+    if not opts.get('quiet'):
+        #logging.basicConfig()
+        log = logging.getLogger()
+        log.setLevel(logging.DEBUG)
 
-        if opts.verbose:
-            logging.getLogger().setLevel(logging.DEBUG)
-            logging.debug(opts.__dict__)
+        if opts.get('verbose'):
+            log = logging.getLogger()
+            log.setLevel(logging.DEBUG)
+            log.debug(('opts', opts))
 
-    col_map = collections.OrderedDict()
-    if opts.col_mapstr:
-        col_map = build_column_map(opts.col_mapstr)
+    opts['col_map'] = collections.OrderedDict()
+    if opts.get('col_mapstr'):
+        opts['col_map'] = build_column_map(opts.get('col_mapstr'))
 
-    sortfunc = get_sort_function(opts, col_map=col_map)
+    sortfunc = None
+    if opts.get('sort_asc') and opts.get('sort_desc'):
+        prs.error("both sort-asc and sort-desc are specified")
 
-    cmd = ' '.join(args)
-    if not cmd.strip():
-        if opts.regex:
-            if opts.output_filetype == 'json' and '<' in opts.regex:
-                cmd = 'rgx and rgx.groupdict()'
+    if 'cmd' not in opts:
+        cmd = ' '.join(args)
+        if not cmd.strip():
+            if opts.get('regex'):
+                if (opts.get('output_filetype') == 'json'
+                    and '<' in opts.get('regex')):
+                    cmd = 'rgx and rgx.groupdict()'
+                else:
+                    cmd = 'rgx and rgx.groups()'
             else:
-                cmd = 'rgx and rgx.groups()'
-        else:
-            cmd = 'obj'
+                cmd = 'obj'
+        opts['cmd'] = cmd.strip()
 
-    cmd = cmd.strip()
-    opts.cmd = cmd
+    if opts.get('verbose'):
+        log_(('optsdict 0', optsdict))
 
-    if opts.verbose:
-        logging.debug(opts.__dict__)
-
-    opts.attrs = PylineResult._fields
+    # opts['attrs'] = PylineResult._fields # XX
+    opts['attrs'] = list(opts['col_map'].keys()) if 'col_map' in opts else None
 
     try:
         if iterable is not None:
-            opts._file = iterable
+            opts['_file'] = iterable
         else:
-            if opts.file is '-':
+            if opts.get('file') is '-':
                 # opts._file = sys.stdin
-                opts._file = codecs.getreader('utf8')(sys.stdin)
+                opts['_file'] = codecs.getreader('utf8')(sys.stdin)
             else:
-                opts._file = codecs.open(opts.file, 'r', encoding='utf8')
+                opts['_file'] = codecs.open(opts['file'], 'r', encoding='utf8')
 
         if output is not None:
-            opts._output = output
+            opts['_output'] = output
         else:
-            if opts.output is '-':
+            if opts.get('output') is '-':
                 # opts._output = sys.stdout
-                opts._output = codecs.getwriter('utf8')(sys.stdout)
+                opts['_output'] = codecs.getwriter('utf8')(sys.stdout)
+            elif opts.get('output'):
+                opts['_output'] = codecs.open(opts['output'], 'w', encoding='utf8')
             else:
-                opts._output = codecs.open(opts.output, 'w', encoding='utf8')
+                # opts._output = sys.stdout
+                opts['_output'] = codecs.getwriter('utf8')(sys.stdout)
 
-        writer, output_func = ResultWriter.get_writer(
-            opts._output,
-            filetype=opts.output_filetype,
-            number_lines=opts.number_lines,
-            attrs=opts.attrs)
+        if opts.get('output_filetype') is None:
+            #opts.output_filetype = DEFAULTS['output_filetype']
+            opts['output_filetype'] = 'csv'
+            #TODO
+
+        writer = ResultWriter.get_writer(
+            opts['_output'],
+            filetype=opts['output_filetype'],
+            number_lines=opts.get('number_lines'),
+            attrs=opts['attrs'])
         writer.header()
 
-        # if not sorting, return a result iterator
-        if not sortfunc:
-            for result in pyline(opts._file, **opts.__dict__):
-                if not result.result:
-                    # skip result if not bool(result.result)
-                    continue  # TODO
-
-                output_func(result)
-        # if sorting, return the sorted list
-        else:
-            results = []
-            for result in pyline(opts._file, **opts.__dict__):
+        sortfunc = get_sort_function(**opts)
+        # if sorting, collect and sort before printing
+        if sortfunc:
+            _results = []
+            for result in pyline(opts['_file'], **opts):
                 if not result.result:
                     # skip result if not bool(result.result)
                     continue
-                results.append(result)
-            for result in sortfunc(results):
-                output_func(result)
+                _results.append(result)
+            sorted_results = sortfunc(_results)
+            if results is not None:
+                results.extend(sorted_results)
+            # import pdb; pdb.set_trace()  # XXX BREAKPOINT
+            for result in sorted_results:
+                writer.output_func(result)
+        # if not sorting, return a result iterator
+        else:
+            for result in pyline(opts['_file'], **opts):
+                if not result.result:
+                    # skip result if not bool(result.result)
+                    continue
+                writer.output_func(result)
+                if results is not None:
+                    results.append(result)
 
         writer.footer()
     finally:
-        if (getattr(
-                getattr(opts, '_file', codecs.EncodedFile),
+        if (getattr(opts.get('_file', codecs.EncodedFile),
                 'fileno', int)() not in (0, 1, 2)):
-            opts._file.close()
+            opts['_file'].close()
 
-        # This causes multiple tests of main() to fail:
-        # if opts._output != '-' and hasattr(opts._output, 'close'):
-        #     opts._output.close()
-        # When opts goes out of scope, and gc occurs,
-        # the opts._file and opts._output file handles are [...]
-
+    # opts
+    # results
+    # sorted_results
+    # if passed, results are .append-ed to results
     return 0
 
 
 if __name__ == "__main__":
     import sys
-    sys.exit(main())
+    sys.exit(main(args=sys.argv[1:]))

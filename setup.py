@@ -37,7 +37,7 @@ if sys.argv[-1] == 'publish':
 
 class PyTestCommand(Command):
     user_options = []
-    description = "<TODO>"
+    description = "Run runtests.py with the current sys.executable"
 
     def initialize_options(self):
         pass
