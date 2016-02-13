@@ -92,115 +92,7 @@ class IO(_IO):
                 pprint.pformat(self.expectedoutput))
 
 
-class TestPyline(unittest.TestCase):
-
-    def setUp(self, *args):
-        self.setup_logging()
-        (self._test_file_fd, self.TEST_FILE) = tempfile.mkstemp(text=True)
-        fd = self._test_file_fd
-        os.write(fd, TEST_INPUT)
-        os.write(fd, self.TEST_FILE)
-        self.log.info("setup: %r", repr(self.TEST_FILE))
-
-    def setup_logging(self):
-        self.log = logging.getLogger() # self.__class__.__name__)
-        self.log.setLevel(logging.DEBUG)
-
-    def tearDown(self):
-        os.close(self._test_file_fd)
-        os.remove(self.TEST_FILE)
-
-    def test_10_pyline_pyline(self):
-        PYLINE_TESTS = (
-            {"cmd": "line"},
-            {"cmd": "words"},
-            {"cmd": "sorted(words)"},
-            {"cmd": "w[:3]"},
-            {"regex": r"(.*)"},
-            {"regex": r"(.*)", "cmd": "rgx and rgx.groups()"},
-            {"regex": r"(.*)", "cmd": "rgx and rgx.groups() or '#'"},
-        )
-        _test_output = sys.stdout
-        _test_input = io.StringIO(TEST_INPUT)
-        for test in PYLINE_TESTS:
-            for line in pyline.pyline(_test_input, **test):
-                print(line, file=_test_output)
-
-    def test_15_pyline_sort__0__line_asc0(self):
-        io = IO(TEST_INPUT_A0,
-                {"cmd": "line", "sort_asc": "0"},
-                TEST_OUTPUT_A0_SORT_ASC_0.splitlines(True))
-        self.assertTestIO(io)
-
-    def test_15_pyline_sort__1__words_asc0(self):
-        io = IO(TEST_INPUT_A0,
-                {"cmd": "words", "sort_asc": "0"},
-                splitwords(TEST_OUTPUT_A0_SORT_ASC_0))
-        self.assertTestIO(io)
-
-    def test_15_pyline_sort__2__words_asc1(self):
-        io = IO(TEST_INPUT_A0,
-                {"cmd": "words", "sort_asc": "1"},
-                splitwords(TEST_OUTPUT_A0_SORT_ASC_1))
-        self.assertTestIO(io)
-
-    def test_15_pyline_sort__3__words_asc2(self):
-        io = IO(TEST_INPUT_A0,
-                {"cmd": "words", "sort_asc": "2"},   # words[2]
-                splitwords(TEST_OUTPUT_A0_SORT_ASC_2))
-        self.assertTestIO(io)
-
-    def test_15_pyline_sort__4__line_asc1(self):
-        io = IO(TEST_INPUT_A0,
-                {"cmd": "line", "sort_asc": "1"},    # line[2] == ' ' # XXX
-                TEST_INPUT_A0.splitlines(True))
-        self.assertTestIO(io)
-
-    def test_15_pyline_sort__5__words_desc2(self):
-        io = IO(TEST_INPUT_A0,
-                {"cmd": "words", "sort_desc": "2"},  # words[2]
-                splitwords(TEST_OUTPUT_A0_SORT_DESC_2))
-        self.assertTestIO(io)
-
-    # def test_15_pyline_sort__6(self):
-    #     # TODO: AssertRaises ? output w/ cmd "line" undef.
-    #     pass
-
-    # def test_15_pyline_sort__7(self):
-    #     io = ({"cmd": "line", "sort_desc": "0"},
-    #           TEST_OUTPUT_A0_SORT_DESC_0)
-    #     self.assertTestIO(io)
-
-    # def test_15_pyline_sort__8(self):
-    #     io = ({"cmd": "words", "sort_desc": "0"},
-    #           splitwords(TEST_OUTPUT_A0_SORT_DESC_0))
-    #     self.assertTestIO(io)
-
-    # def test_15_pyline_sort__9(self):
-    #     io = ({"cmd": "words"},
-    #           TODO)
-    #     self.assertTestIO(io)
-
-    # def test_15_pyline_sort__10(self):
-    #     io = ({"cmd": "w[:3]"},
-    #           TODO)
-    #     self.assertTestIO(io)
-
-    # def test_15_pyline_sort__11(self):
-    #     io = ({"regex": r"(.*)"},
-    #           TODO)
-    #     self.assertTestIO(io)
-
-    # def test_15_pyline_sort__12(self):
-    #     io = ({"regex": r"(.*)", "cmd": "rgx and rgx.groups()"},
-    #           TODO)
-    #     self.assertTestIO(io)
-
-    # def test_15_pyline_sort__13(self):
-    #     io = ({"regex": r"(.*)", "cmd": "rgx and rgx.groups() or '#'"},
-    #           TODO)
-    #     self.assertTestIO(io)
-
+class SequenceTestCase(unittest.TestCase):
     @staticmethod
     def sequence_sidebyside(
             seq1,
@@ -303,6 +195,7 @@ class TestPyline(unittest.TestCase):
                 seq2_str.splitlines(),
                 fromfile=header1,
                 tofile=header2,
+                lineterm='',
             )
             # diffstr_ndiff = list(difflib.ndiff(seq1_str, seq2_str))
             errmsg = unicode('\n').join((
@@ -353,6 +246,128 @@ class TestPyline(unittest.TestCase):
                 header1='seq1',
                 header2='seq2',
                 msg=msg)
+
+
+class LoggingTestCase():
+    def setup_logging(self):
+        self.log = logging.getLogger() # self.__class__.__name__)
+        self.log.setLevel(logging.DEBUG)
+
+
+class TestPyline(
+    SequenceTestCase, LoggingTestCase, unittest.TestCase):
+
+    def setUp(self, *args):
+        self.setup_logging()
+
+    def test_10_pyline_pyline(self):
+        PYLINE_TESTS = (
+            {"cmd": "line"},
+            {"cmd": "words"},
+            {"cmd": "sorted(words)"},
+            {"cmd": "w[:3]"},
+            {"regex": r"(.*)"},
+            {"regex": r"(.*)", "cmd": "rgx and rgx.groups()"},
+            {"regex": r"(.*)", "cmd": "rgx and rgx.groups() or '#'"},
+        )
+        _test_output = sys.stdout
+        _test_input = io.StringIO(TEST_INPUT)
+        for test in PYLINE_TESTS:
+            for line in pyline.pyline(_test_input, **test):
+                print(line, file=_test_output)
+
+    def test_15_pyline_sort__0__line_asc0(self):
+        io = IO(TEST_INPUT_A0,
+                {"cmd": "line", "sort_asc": "0"},
+                TEST_OUTPUT_A0_SORT_ASC_0.splitlines(True))
+        self.assertTestIO(io)
+
+    def test_15_pyline_sort__1__words_asc0(self):
+        io = IO(TEST_INPUT_A0,
+                {"cmd": "words", "sort_asc": "0"},
+                splitwords(TEST_OUTPUT_A0_SORT_ASC_0))
+        self.assertTestIO(io)
+
+    def test_15_pyline_sort__2__words_asc1(self):
+        io = IO(TEST_INPUT_A0,
+                {"cmd": "words", "sort_asc": "1"},
+                splitwords(TEST_OUTPUT_A0_SORT_ASC_1))
+        self.assertTestIO(io)
+
+    def test_15_pyline_sort__3__words_asc2(self):
+        io = IO(TEST_INPUT_A0,
+                {"cmd": "words", "sort_asc": "2"},   # words[2]
+                splitwords(TEST_OUTPUT_A0_SORT_ASC_2))
+        self.assertTestIO(io)
+
+    def test_15_pyline_sort__4__line_asc1(self):
+        io = IO(TEST_INPUT_A0,
+                {"cmd": "line", "sort_asc": "1"},    # line[2] == ' ' # XXX
+                TEST_INPUT_A0.splitlines(True))
+        self.assertTestIO(io)
+
+    def test_15_pyline_sort__5__words_desc2(self):
+        io = IO(TEST_INPUT_A0,
+                {"cmd": "words", "sort_desc": "2"},  # words[2]
+                splitwords(TEST_OUTPUT_A0_SORT_DESC_2))
+        self.assertTestIO(io)
+
+    # def test_15_pyline_sort__6(self):
+    #     # TODO: AssertRaises ? output w/ cmd "line" undef.
+    #     pass
+
+    # def test_15_pyline_sort__7(self):
+    #     io = ({"cmd": "line", "sort_desc": "0"},
+    #           TEST_OUTPUT_A0_SORT_DESC_0)
+    #     self.assertTestIO(io)
+
+    # def test_15_pyline_sort__8(self):
+    #     io = ({"cmd": "words", "sort_desc": "0"},
+    #           splitwords(TEST_OUTPUT_A0_SORT_DESC_0))
+    #     self.assertTestIO(io)
+
+    # def test_15_pyline_sort__9(self):
+    #     io = ({"cmd": "words"},
+    #           TODO)
+    #     self.assertTestIO(io)
+
+    # def test_15_pyline_sort__10(self):
+    #     io = ({"cmd": "w[:3]"},
+    #           TODO)
+    #     self.assertTestIO(io)
+
+    # def test_15_pyline_sort__11(self):
+    #     io = ({"regex": r"(.*)"},
+    #           TODO)
+    #     self.assertTestIO(io)
+
+    # def test_15_pyline_sort__12(self):
+    #     io = ({"regex": r"(.*)", "cmd": "rgx and rgx.groups()"},
+    #           TODO)
+    #     self.assertTestIO(io)
+
+    # def test_15_pyline_sort__13(self):
+    #     io = ({"regex": r"(.*)", "cmd": "rgx and rgx.groups() or '#'"},
+    #           TODO)
+    #     self.assertTestIO(io)
+
+
+class TestPylineMain(LoggingTestCase, unittest.TestCase):
+
+    def setUp(self):
+        self.setup_logging()
+        self.setup_TEST_FILE()
+
+    def setup_TEST_FILE(self):
+        (self._test_file_fd, self.TEST_FILE) = tempfile.mkstemp(text=True)
+        fd = self._test_file_fd
+        os.write(fd, TEST_INPUT)
+        os.write(fd, self.TEST_FILE)
+        self.log.info("setup: %r", repr(self.TEST_FILE))
+
+    def tearDown(self):
+        os.close(self._test_file_fd)
+        os.remove(self.TEST_FILE)
 
     def test_20_pyline_main(self):
         CMDLINE_TESTS = (
@@ -417,6 +432,8 @@ class TestPyline(unittest.TestCase):
                 self.log.exception(e)
                 raise
 
+
+class TestPylinePyline(SequenceTestCase, unittest.TestCase):
     def test_30_pyline_codefunc(self):
         codefunc = lambda x: x['line'][::-1]
         iterable = ["one", "two"]
@@ -429,7 +446,7 @@ class TestPyline(unittest.TestCase):
 
 import types
 
-class TestCaseColspec(unittest.TestCase):
+class TestColspec(unittest.TestCase):
 
     colspecstr_inputs = """
     0
@@ -452,19 +469,29 @@ class TestCaseColspec(unittest.TestCase):
             self.assertIsInstance(output, types.GeneratorType)
             #TODO
 
-class TestSortfunc(unittest.TestCase):
+def wrap_in_pylineresult(iterable, uri=None, meta=None):
+    for i, x in enumerate(iterable):
+        yield pyline.PylineResult(
+            n=i,
+            result=x,
+            uri=uri,
+            meta=meta)
+
+
+class TestSortfunc(SequenceTestCase, unittest.TestCase):
     def test_sort_by_001(self):
-        iterable = splitwords("a 5 10\nb 6 20\n")
-        resiterable = [pyline.PylineResult(
-            n=0,
-            result=iterable,
-            uri=None,
-            meta=None)]
-        output = pyline.sort_by(resiterable, sortstr='1', reverse=True)
+        iterable = splitwords(TEST_INPUT_A0)
+        resiterable = wrap_in_pylineresult(iterable)
+        # output = pyline.sort_by(resiterable, sortstr='1')
+        output = pyline.sort_by(resiterable, sortstr='1', reverse=False)
         self.assertIsInstance(output, list)
         self.assertTrue(output)
-        self.assertEqual(output[0].result[0][0], "b")
-        raise Exception(output)
+        expectedoutput = splitwords(TEST_OUTPUT_A0_SORT_ASC_1)
+        expectedoutputresults = list(
+            wrap_in_pylineresult(expectedoutput[::-1]))[::-1]  # TEST_INPUT_A0
+        self.assertSequenceEqualSidebyside(expectedoutputresults, output)
+        self.assertSequenceEqual(expectedoutputresults, output)
+        self.assertEqual(expectedoutputresults, output)
 
 
 if __name__ == '__main__':
