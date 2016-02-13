@@ -25,7 +25,8 @@ pyline
 .. _ReadTheDocs:  https://pyline.readthedocs.org/en/latest
 .. _Travis-CI:  https://travis-ci.org/westurner/pyline
 
-Pyline: a grep-like, sed-like command-line tool (Python package)
+Pyline is a grep-like, sed-like, awk-like command-line tool for
+line-based text processing in Python.
 
 
 Features

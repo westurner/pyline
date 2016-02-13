@@ -37,7 +37,7 @@ if sys.argv[-1] == 'publish':
 
 class PyTestCommand(Command):
     user_options = []
-    description = "<TODO>"
+    description = "Run runtests.py with the current sys.executable"
 
     def initialize_options(self):
         pass
@@ -73,10 +73,10 @@ def build_long_description():
 
 setup(
     name='pyline',
-    version='0.3.6',
+    version='0.3.7',
     description=(
-        'A grep-like, sed-like command-line tool for line-based '
-        'processing in Python.'),
+        'Pyline is a grep-like, sed-like, awk-like command-line tool '
+        'for line-based text processing in Python.'),
     long_description=build_long_description(),
     author='Wes Turner',
     author_email='wes@wrd.nu',
@@ -88,8 +88,7 @@ setup(
     package_dir={'pyline':
                  'pyline'},
     include_package_data=True,
-    install_requires=[
-    ],
+    install_requires=[],
     license="PSF",
     zip_safe=False,
     keywords='pyline sed grep',
