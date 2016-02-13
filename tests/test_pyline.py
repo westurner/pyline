@@ -435,13 +435,20 @@ class TestPylineMain(LoggingTestCase, unittest.TestCase):
 
 class TestPylinePyline(SequenceTestCase, unittest.TestCase):
     def test_30_pyline_codefunc(self):
-        codefunc = lambda x: x['line'][::-1]
         iterable = ["one", "two"]
         outrable = ["eno", "owt"]
+
+        codefunc = lambda x: x['line'][::-1]
         output = pyline.pyline(iterable, codefunc=codefunc)
         self.assertTrue(hasattr(output, 'next'))
         output_list = [result.result for result in output]
         self.assertEqual(output_list, outrable)  # ...
+
+        cmd = 'line[::-1]'
+        output2 = pyline.pyline(iterable, cmd=cmd)
+        self.assertTrue(hasattr(output2, 'next'))
+        output_list2 = [result.result for result in output2]
+        self.assertEqual(output_list2, outrable)  # ...
 
 
 import types
