@@ -6,17 +6,34 @@ History
 
 
 
-release/0.3.8 (2016-02-14 17:32:51 -0600)
+
+
+release/0.3.9 (2016-02-14 17:56:26 -0600)
 +++++++++++++++++++++++++++++++++++++++++
 ::
 
-   git log --reverse --pretty=format:'* %s [%h]' v0.3.7..release/0.3.8
+   git log --reverse --pretty=format:'* %s [%h]' v0.3.8..release/0.3.9
+
+* ENH: pyline.py: --version arg [a38bf5a]
+* MRG: Merge tag 'v0.3.8' into develop [85cd8e9]
+* BUG,REF: pyline.py: output-filetype/-> output-format [fbcd9e2]
+* BUG: pyline.py: only print version when opts.get('version') [ef8ac20]
+* RLS,DOC: setup.py,pyline.py: version 0.3.9 [5f2c4a6]
+
+
+v0.3.8 (2016-02-14 17:34:08 -0600)
+++++++++++++++++++++++++++++++++++
+::
+
+   git log --reverse --pretty=format:'* %s [%h]' v0.3.7..v0.3.8
 
 * MRG: Merge tag 'v0.3.7' into develop [0cd0e3c]
 * BUG,ENH: fix CSV header row; add -O jinja:template=path.jinja support (#1,) [d5fe67b]
 * ENH: pyline.py: --version arg [818fc1d]
 * RLS: setup.py, pyline.py: version 0.3.8 [245214d]
 * DOC: HISTORY.rst: git-changelog.py --hdr=+ --rev 'release/0.3.8' | pbcopy [983b535]
+* DOC: HISTORY.rst: git-changelog.py --hdr=+ --rev 'release/0.3.8' | pbcopy [7b65d8e]
+* MRG: Merge branch 'release/0.3.8' [2f5f249]
 
 
 v0.3.7 (2016-02-12 20:04:39 -0600)
@@ -254,6 +271,7 @@ v0.1.0 (2014-05-12 04:03:15 -0500)
 * BLD: Update tox.ini, .travis.yml, reqs, docs/conf [13b5487]
 * CLN: pyline cleanup [9724f8e]
 * CLN: update .hgignore [59196b7]
+
 
 
 
