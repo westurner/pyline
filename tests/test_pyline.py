@@ -480,9 +480,10 @@ def wrap_in_pylineresult(iterable, uri=None, meta=None):
     for i, x in enumerate(iterable):
         yield pyline.PylineResult(
             n=i,
-            result=x,
-            uri=uri,
-            meta=meta)
+            result=x)
+        # ,
+        #     uri=uri,
+        #     meta=meta)
 
 
 class TestSortfunc(SequenceTestCase, unittest.TestCase):
@@ -500,6 +501,135 @@ class TestSortfunc(SequenceTestCase, unittest.TestCase):
         self.assertSequenceEqual(expectedoutputresults, output)
         self.assertEqual(expectedoutputresults, output)
 
+
+class Test_parse_formatstring(unittest.TestCase):
+
+    def assertFormatString(self, input_, expectedoutput):
+        output = pyline.parse_formatstring(input_)
+        expectedoutput = pyline.OrderedDict_(expectedoutput)
+        self.assertDictEqual(expectedoutput, output)
+        self.assertEqual(expectedoutput, output)
+
+    def test_parse_formatstring__01(self):
+        dict = pyline.OrderedDict_
+        self.assertFormatString(
+            'format',
+            dict((('_output_format', 'format'), ('_output_format_args', None))))
+        self.assertFormatString(
+            'format:opt1',
+            dict((('_output_format', 'format'), ('_output_format_args', 'opt1'),
+                  ('opt1', True))))
+        _output_formatstring = 'format:+isTrue,isTrue2,-isFalse,key0=value0,key1=1,key21=2.1'
+        self.assertFormatString(
+            _output_formatstring,
+            dict((('_output_format', 'format'),
+                  ('_output_format_args', _output_formatstring[7:]),
+                 ('isTrue', True),
+                 ('isTrue2', True),
+                 ('isFalse', False),
+                 ('key0', 'value0'),
+                 ('key1', 1),
+                 ('key21', 2.1),
+            )))
+        _output_formatstring = 'format:+isTrue,isTrue2,-isFalse,key0=value0,key1=1,key21=2.1'
+        self.assertFormatString(
+            _output_formatstring,
+            dict((('_output_format', 'format'),
+                  ('_output_format_args', _output_formatstring[7:]),
+                 ('isTrue', True),
+                 ('isTrue2', True),
+                 ('isFalse', False),
+                 ('key0', 'value0'),
+                 ('key1', 1),
+                 ('key21', 2.1),
+            )))
+        self.assertFormatString(
+            ':opt1',
+            dict((('_output_format', None),
+                  ('_output_format_args', 'opt1'),
+                  ('opt1', True),
+                  )))
+        self.assertFormatString(
+            ':',
+            dict((('_output_format', None),
+                  ('_output_format_args', None))))
+        self.assertFormatString(
+            '',
+            dict((('_output_format', None),
+                  ('_output_format_args', None))))
+
+
+class Test_str2boolintorfloat(unittest.TestCase):
+
+    def test_str2boolintorfloat_01(self):
+        str2boolintorfloat = pyline.str2boolintorfloat
+        self.assertEqual(
+            str2boolintorfloat('true'),
+            True)
+        self.assertEqual(
+            str2boolintorfloat('True'),
+            True)
+        self.assertEqual(
+            str2boolintorfloat('false'),
+            False)
+        self.assertEqual(
+            str2boolintorfloat('False'),
+            False)
+        self.assertEqual(
+            str2boolintorfloat('0'),
+            0)
+        self.assertEqual(
+            str2boolintorfloat('0.1'),
+            0.1)
+        teststr = 'test "string" '
+        self.assertEqual(
+            str2boolintorfloat(teststr),
+            teststr)
+        self.assertEqual(
+            str2boolintorfloat(''),
+            '')
+
+jinja2 = None
+
+class TestPylineJinja(unittest.TestCase):
+    def setUp(self):
+        global jinja2
+        import jinja2
+
+    def test_pyline_jinja__mustspecifyargs_ValueError(self):
+        iterable = TEST_INPUT_A0
+        with self.assertRaises(ValueError):
+            pyline.main(
+                args=['-O', 'jinja'],
+                iterable=iterable)
+
+    def test_pyline_jinja__TemplateNotFound(self):
+        iterable = TEST_INPUT_A0
+        results = []
+        with self.assertRaises(jinja2.TemplateNotFound):
+            pyline.main(
+                args=['-O', 'jinja:template=TemplateNotFound!.jinja'],
+                results=results,
+                iterable=iterable)
+
+    def test_pyline_jinja__testtemplate(self):
+        iterable = TEST_INPUT_A0
+        results = []
+        template_name = 'obj-newline.jinja2'
+        templatespath = os.path.realpath(os.path.join(
+            os.path.dirname(__file__),
+            '..',
+            'pyline',
+            'templates'))
+        templatepath = os.path.join(templatespath, template_name)
+        output_formatstr = 'jinja:template={}'.format(templatepath)
+        retcode = pyline.main(
+            #args=['-O', 'jinja:template=obj-newline.jinja'],
+            args=['-O', output_formatstr],
+            results=results,
+            iterable=iterable)
+        self.assertEqual(0, retcode)
+        self.assertTrue(results)
 
 if __name__ == '__main__':
     sys.exit(unittest.main())
