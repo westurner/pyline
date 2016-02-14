@@ -16,9 +16,9 @@ Features:
 * Python ``shlex.split(posix=True)`` with POSIX quote parsing (``--shlex``)
 * Python Regex (``-r``, ``--regex``, ``-R``, ``--regex-options``)
 * Output as ``txt``, ``csv``, ``tsv``, ``json``, ``html``
-  (``-O|--output-filetype=csv``)
+  (``-O|--output-output_format=csv``)
 * Output as Markdown/ReStructuredText ``checkbox`` lists
-  (``-O|--output-filetype=checkbok``)
+  (``-O|--output-output_format=checkbok``)
 * (Lazy) sorting (``-s``, ``--sort-asc``, ``-S``, ``--sort-desc``) # XXX TODO
 * Path.py or pathlib objects from each line (``-p``)
 * ``namedtuple``s, ``yield``ing generators
@@ -71,7 +71,7 @@ Shell::
 
 """
 
-__version__ = version = "0.3.7"
+__version__ = version = "0.3.8"
 
 import cgi
 import csv
@@ -87,6 +87,7 @@ import sys
 
 
 from collections import namedtuple
+from functools import partial
 
 EPILOG = __doc__  # """  """
 
@@ -121,7 +122,7 @@ log.debug("DEBUG!")
 #h = NullHandler()
 #log.addHandler(h)
 
-Result = namedtuple('Result', ('n', 'result', 'uri', 'meta'))
+Result = namedtuple('Result', ('n', 'result')) # , 'uri', 'meta'))
 
 
 class PylineResult(Result):
@@ -177,7 +178,7 @@ def debug(*args, **kwargs):
     raise Exception(args, kwargs)
 
 def log_(*args, **kwargs):
-    """log through to stdout and return what is passed in
+    """log through to stderr and return what is passed in
 
     .. code::
 
@@ -187,7 +188,7 @@ def log_(*args, **kwargs):
         log(value1, value2) -> [value1, value2]
     """
     log.debug((args, kwargs))
-    print((args, kwargs), file=sys.stderr)
+    #print((args, kwargs), file=sys.stderr)
     if kwargs is None:
         if len(args) == 1:
             return args[0]
@@ -344,7 +345,7 @@ def pyline(iterable,
             log.exception(repr(cmd))
             log.exception(e)
             raise
-        yield PylineResult(n=i, result=result, uri=uri, meta=meta)
+        yield PylineResult(n=i, result=result)  # , uri=uri, meta=meta)
 
 
 class OrderedDict_(collections.OrderedDict):
@@ -353,45 +354,6 @@ class OrderedDict_(collections.OrderedDict):
 
     def values(self):
         return list(collections.OrderedDict.values(self))
-
-
-# mock optparse.Options
-# alternative: s/opts.\([\w_]+\)/opts[\1]/g
-
-NONE = '____!____' #  ...
-
-from functools import partial # TODO sort to top
-
-class OrderedDict_Attrs(OrderedDict_):
-    def __getattribute__(self, *args, **kwargs):
-        """
-        - TODO: @wraps decorator
-        """
-        attr = args[0]
-        if attr.startswith('_OrderedDict_'):
-            method = getattr(OrderedDict_, '__getattribute__')
-        else:
-            default = kwargs.get('default', NONE)
-            if default is not NONE:
-                # kwargs = {'default': default}
-                args = (args, default)
-            #method = getattr(OrderedDict_, '__getitem__')
-            method = getattr(OrderedDict_, 'get')
-        return method(self, *args, **kwargs)
-
-    get = __getattribute__
-    getdefault = partial(__getattribute__, default=None)
-
-    def __setattr__(self, key, value):
-        if key.startswith('_OrderedDict_'):
-            method = getattr(OrderedDict_, '__setattr__')
-        else:
-            method = getattr(OrderedDict_, '__setitem__')
-            #partial(setattr, (key,value))
-        return method(self, key, value)
-
-    def __dict__(self):
-        return self
 
 
 # from collections import MutableMapping
@@ -409,8 +371,6 @@ class PylineDatasource(object):
     def add_resultset(self, results):
         if results is not None:
             self.data['resultsets'].append(results)
-
-
 
 
 typestr_func_map = collections.OrderedDict((
@@ -627,17 +587,124 @@ def sort_by(iterable,
     return sorted_values
 
 
+def str2boolintorfloat(str_):
+    """
+    Try to cast a string as a ``bool``, ``float``, ``int``,
+    or ``str_.__class__``.
+
+    Args:
+        str_ (basestring): string to try and cast
+    Returns:
+        object: casted ``{boot, float, int, or str_.__class__}``
+    """
+    match = re.match('([\d\.]+)', str_)
+    type_ = None
+    if not match:
+        type_ = str_.__class__
+        value = str_
+        value_lower = value.strip().lower()
+        if value_lower == 'true':
+            type_ = bool
+            value = True
+        elif value_lower == 'false':
+            type_ = bool
+            value = False
+        return value
+    else:
+        try:
+            numstr = match.group(1)
+            if '.' in numstr:
+                type_ = float
+                value = type_(numstr)
+            else:
+                type_ = int
+                value = type_(numstr)
+        except (ValueError, NameError, IndexError) as e:
+            value = str_
+            log.exception((e, (type_, value)))
+    return value
+
+
+def parse_formatstring(str_):
+    """
+    Parse a format string like
+    ``format:+isTrue,-isFalse,key0=value,key1=1.1,keyTrue=true``
+
+    Args:
+        str_ (basestring): _format
+
+    Returns:
+        OrderedDict_: {key: {True|False|float|int|str}}
+
+        .. code:: python
+
+            {
+                fmtkey:   _formatstr,
+                argkey: argstr,
+
+                'key0':   'value0',
+                'key1':   1,
+                'key2':   True,
+                'key2.1': 2.1,
+            }
+
+    Inspired by rdflib ``rdfpipe -h | grep 'FORMAT:'``::
+
+        FORMAT:(+)KW1,-KW2,KW3=VALUE
+        format
+        format:opt1
+        format:opt2=True
+
+    """
+    fmtkey = '_output_format'
+    argkey = '_output_format_args'
+    strsplit = str_.split(':', 1)
+    if len(strsplit) == 1:
+        _format = strsplit[0]
+        _format = _format if _format else None
+        return OrderedDict_((
+            (fmtkey, _format),
+            (argkey, None),
+        ))
+    else:
+        _format, argstr = strsplit
+        _format = _format if _format else None
+        opts = OrderedDict_()
+        opts[fmtkey] = _format
+        opts[argkey] = argstr if argstr else None
+        _args = [x.strip() for x in argstr.split(',')]
+        for arg in _args:
+            if not arg:
+                continue
+            key, value = None, None
+            if '=' in arg:
+                key, value = [x.strip() for x in arg.split('=', 1)]
+            else:
+                if arg[0] == '-':
+                    key, value = arg[1:], False
+                elif arg[0] == '+':
+                    key, value = arg[1:], True
+                else:
+                    key, value = arg, True
+            if not isinstance(value, (bool, float, int)):
+                opts[key] = str2boolintorfloat(value)
+            else:
+                opts[key] = value
+    return opts
+
+
 class ResultWriter(object):
     OUTPUT_FILETYPES = {
         'csv': ",",
         'json': True,
         'tsv': "\t",
         'html': True,
+        'jinja': True,
         "txt": True,
         "checkbox": True,
         "chk": True
     }
-    filetype = None
+    output_format = None
 
     def __init__(self, _output, *args, **kwargs):
         self._output = _output
@@ -666,35 +733,55 @@ class ResultWriter(object):
         pass
 
     @classmethod
+    def is_valid_output_format(cls, _output_formatstr):
+        opts = parse_formatstring(_output_formatstr)
+        _output_format = opts.get('_output_format')
+        if _output_format in cls.OUTPUT_FILETYPES:
+            return _output_format
+        return False
+
+    @classmethod
     def get_writer(cls, _output,
-                   filetype="csv",
+                   output_format="csv",
                    **kwargs):
-        """get writer object for _output with the specified filetype
+        """get writer object for _output with the specified output_format
 
-        :param output_filetype: txt | csv | tsv | json | html | checkbox
-        :param _output: output file
+        Args:
+            _output (file-like .write): output to write to
+        Kwargs:
+            output_format (str): a formatstring to be parsed by
+                            :py:func:`parse_formatstring`
+            Filetypes::
 
+                txt | csv | tsv | json | html | jinja | checkbox
+
+        Returns:
+            ResultWriter: a configured ResultWriter subclass instance
         """
-        output_filetype = filetype.strip().lower()
+        opts = parse_formatstring(output_format.strip())
+        _output_format = opts.pop('_output_format', None)
+        opts.update(kwargs)
 
-        if output_filetype not in ResultWriter.OUTPUT_FILETYPES:
-            raise ValueError("output_filetype: %r" % output_filetype)
+        if not cls.is_valid_output_format(_output_format):
+            raise ValueError("_output_format: %r" % _output_format)
 
         writer = None
-        if output_filetype == "txt":
+        if _output_format == "txt":
             writer = ResultWriter_txt(_output)
-        elif output_filetype == "csv":
-            writer = ResultWriter_csv(_output, **kwargs)
-        elif output_filetype == "tsv":
-            writer = ResultWriter_csv(_output, delimiter='\t', **kwargs)
-        elif output_filetype == "json":
+        elif _output_format == "csv":
+            writer = ResultWriter_csv(_output, **opts)
+        elif _output_format == "tsv":
+            writer = ResultWriter_csv(_output, delimiter='\t', **opts)
+        elif _output_format == "json":
             writer = ResultWriter_json(_output)
-        elif output_filetype == "html":
-            writer = ResultWriter_html(_output, **kwargs)
-        elif output_filetype in ("checkbox", "chk"):
-            writer = ResultWriter_checkbox(_output, **kwargs)
+        elif _output_format == "html":
+            writer = ResultWriter_html(_output, **opts)
+        elif _output_format.startswith("jinja"):
+            writer = ResultWriter_jinja(_output, **opts)
+        elif _output_format in ("checkbox", "chk"):
+            writer = ResultWriter_checkbox(_output, **opts)
         else:
-            raise ValueError("output_filetype: %r" % output_filetype)
+            raise ValueError("_output_format: %r" % _output_format)
 
         output_func = None
         if kwargs.get('number_lines'):
@@ -706,20 +793,20 @@ class ResultWriter(object):
 
 
 class ResultWriter_txt(ResultWriter):
-    filetype = 'txt'
+    output_format = 'txt'
 
     def write_numbered(self, obj):
         self.write(obj._numbered_str(odelim='\t'))
 
 
 class ResultWriter_csv(ResultWriter):
-    filetype = 'csv'
+    output_format = 'csv'
 
     def setup(self, *args, **kwargs):
         self.delimiter = kwargs.get(
             'delimiter',
             ResultWriter.OUTPUT_FILETYPES.get(
-                self.filetype,
+                self.output_format,
                 ','))
         self._output_csv = csv.writer(self._output,
                                       quoting=csv.QUOTE_NONNUMERIC,
@@ -727,8 +814,9 @@ class ResultWriter_csv(ResultWriter):
         #                             doublequote=True)
 
     def header(self, *args, **kwargs):
-        attrs = kwargs.get('attrs', PylineResult._fields)
-        self._output_csv.writerow(attrs)
+        attrs = kwargs.get('attrs')
+        if attrs is not None:
+            self._output_csv.writerow(attrs)
 
     def write(self, obj):
         self._output_csv.writerow(obj.result)
@@ -738,7 +826,7 @@ class ResultWriter_csv(ResultWriter):
 
 
 class ResultWriter_json(ResultWriter):
-    filetype = 'json'
+    output_format = 'json'
 
     def write(self, obj):
         print(
@@ -752,14 +840,14 @@ class ResultWriter_json(ResultWriter):
 
 
 class ResultWriter_html(ResultWriter):
-    filetype = 'html'
+    output_format = 'html'
     escape_func = staticmethod(cgi.escape)
 
     def header(self, *args, **kwargs):
-        attrs = kwargs.get('attrs')
         self._output.write("<table>")
         self._output.write("<tr>")
-        if bool(attrs):
+        attrs = kwargs.get('attrs')
+        if attrs is not None:
             for col in attrs:
                 self._output.write(u"<th>%s</th>" % self.escape_func(col))
         self._output.write("</tr>")
@@ -787,9 +875,37 @@ class ResultWriter_html(ResultWriter):
     def footer(self):
         self._output.write('</table>\n')
 
+class ResultWriter_jinja(ResultWriter):
+    output_format = 'jinja'
+    escape_func = staticmethod(cgi.escape)
+
+    def setup(self, *args, **kwargs):
+        log_(('args', args))
+        log_(('kwargs', kwargs))
+        import jinja2, os
+        self.escape_func = jinja2.escape
+        templatepath = kwargs.get('template', kwargs.get('tmpl'))
+        if templatepath is None:
+            raise ValueError(
+                "Specify at least a template= like "
+                "'jinja:+autoescape,template=./template.jinja2'")
+        self.templatepath = os.path.dirname(templatepath)
+        self.template = os.path.basename(templatepath)
+        self.loader = jinja2.FileSystemLoader(self.templatepath)
+        envargs = OrderedDict_()
+        envargs['autoescape'] = kwargs.get('autoescape', True)
+        # envargs['extensions'] = []
+        self.env = jinja2.Environment(**envargs)
+        self.tmpl = self.loader.load(self.env, self.template)
+
+    def write(self, obj):
+        context = OrderedDict_()
+        context['obj'] = obj
+        jinja2_output = self.tmpl.render(**context)
+        return self._output.write(jinja2_output)
 
 class ResultWriter_checkbox(ResultWriter):
-    filetype = 'checkbox'
+    output_format = 'checkbox'
 
     def _checkbox_row(self, obj, wrap=79):
         yield u'\n'.join(textwrap.wrap(
@@ -856,11 +972,11 @@ def get_option_parser():
                    default="\t",
                    help='String output delimiter for lists and tuples'
                         '''  #default: '\\t' (tab, chr(9), $'\\t')''')
-    prs.add_option('-O', '--output-filetype',
-                   dest='output_filetype',
+    prs.add_option('-O', '--output-output_format',
+                   dest='_output_format',
                    action='store',
                    default='txt',
-                   help=("Output filetype <txt|csv|tsv|json|checkbox|chk|html> "
+                   help=("Output output_format <txt|csv|tsv|json|checkbox|chk|html> "
                          "  #default: txt"))
     prs.add_option('-p', '--pathpy',
                    dest='path_tools_pathpy',
@@ -919,6 +1035,11 @@ def get_option_parser():
     prs.add_option('-q', '--quiet',
                    dest='quiet',
                    action='store_true',)
+
+    prs.add_option('--version',
+                   dest='version',
+                   action='store_true',
+                   help='Print the version string')
 
     return prs
 
@@ -996,6 +1117,7 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
     args = list(args) if args is not None else [] # sys.argv[1:]
     if opts is None:
         (opts, args) = prs.parse_args(args)
+        log_(('args1', args))
     optsdict = None
     if hasattr(opts, '__dict__'):
         optsdict = opts.__dict__
@@ -1009,7 +1131,7 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
 
     log = logging.getLogger()
     if not opts.get('quiet'):
-        #logging.basicConfig()
+        logging.basicConfig()
         log = logging.getLogger()
         log.setLevel(logging.DEBUG)
 
@@ -1017,6 +1139,10 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
             log = logging.getLogger()
             log.setLevel(logging.DEBUG)
             log.debug(('opts', opts))
+
+    if 'version' in opts:
+        print(__version__)
+        return 0
 
     opts['col_map'] = collections.OrderedDict()
     if opts.get('col_mapstr'):
@@ -1028,9 +1154,10 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
 
     if 'cmd' not in opts:
         cmd = ' '.join(args)
+        log_(('args', args))
         if not cmd.strip():
             if opts.get('regex'):
-                if (opts.get('output_filetype') == 'json'
+                if (opts.get('_output_format') == 'json'
                     and '<' in opts.get('regex')):
                     cmd = 'rgx and rgx.groupdict()'
                 else:
@@ -1038,9 +1165,10 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
             else:
                 cmd = 'obj'
         opts['cmd'] = cmd.strip()
+        log_(('cmd', cmd))
 
     if opts.get('verbose'):
-        log_(('optsdict 0', optsdict))
+        log_(('opts', opts))
 
     # opts['attrs'] = PylineResult._fields # XX
     opts['attrs'] = list(opts['col_map'].keys()) if 'col_map' in opts else None
@@ -1067,14 +1195,15 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
                 # opts._output = sys.stdout
                 opts['_output'] = codecs.getwriter('utf8')(sys.stdout)
 
-        if opts.get('output_filetype') is None:
-            #opts.output_filetype = DEFAULTS['output_filetype']
-            opts['output_filetype'] = 'csv'
+        if opts.get('_output_format') is None:
+            #opts._output_format = DEFAULTS['_output_format']
+            #opts['_output_format'] = 'csv'
+            opts['_output_format'] = 'json'
             #TODO
 
         writer = ResultWriter.get_writer(
             opts['_output'],
-            filetype=opts['output_filetype'],
+            output_format=opts['_output_format'],
             number_lines=opts.get('number_lines'),
             attrs=opts['attrs'])
         writer.header()
