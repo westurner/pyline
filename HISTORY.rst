@@ -5,7 +5,8 @@ History
 
 
 
-release/0.3.8 (2016-02-14 17:24:50 -0600)
+
+release/0.3.8 (2016-02-14 17:32:51 -0600)
 +++++++++++++++++++++++++++++++++++++++++
 ::
 
@@ -15,6 +16,7 @@ release/0.3.8 (2016-02-14 17:24:50 -0600)
 * BUG,ENH: fix CSV header row; add -O jinja:template=path.jinja support (#1,) [d5fe67b]
 * ENH: pyline.py: --version arg [818fc1d]
 * RLS: setup.py, pyline.py: version 0.3.8 [245214d]
+* DOC: HISTORY.rst: git-changelog.py --hdr=+ --rev 'release/0.3.8' | pbcopy [983b535]
 
 
 v0.3.7 (2016-02-12 20:04:39 -0600)
@@ -252,6 +254,7 @@ v0.1.0 (2014-05-12 04:03:15 -0500)
 * BLD: Update tox.ini, .travis.yml, reqs, docs/conf [13b5487]
 * CLN: pyline cleanup [9724f8e]
 * CLN: update .hgignore [59196b7]
+
 
 
 0.0.1 (Unreleased)
