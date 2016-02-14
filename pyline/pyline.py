@@ -16,9 +16,9 @@ Features:
 * Python ``shlex.split(posix=True)`` with POSIX quote parsing (``--shlex``)
 * Python Regex (``-r``, ``--regex``, ``-R``, ``--regex-options``)
 * Output as ``txt``, ``csv``, ``tsv``, ``json``, ``html``
-  (``-O|--output-output_format=csv``)
+  (``-O|--output-format=csv``)
 * Output as Markdown/ReStructuredText ``checkbox`` lists
-  (``-O|--output-output_format=checkbok``)
+  (``-O|--output-format=checkbok``)
 * (Lazy) sorting (``-s``, ``--sort-asc``, ``-S``, ``--sort-desc``) # XXX TODO
 * Path.py or pathlib objects from each line (``-p``)
 * ``namedtuple``s, ``yield``ing generators
@@ -71,7 +71,7 @@ Shell::
 
 """
 
-__version__ = version = "0.3.8"
+__version__ = version = "0.3.9"
 
 import cgi
 import csv
@@ -972,7 +972,7 @@ def get_option_parser():
                    default="\t",
                    help='String output delimiter for lists and tuples'
                         '''  #default: '\\t' (tab, chr(9), $'\\t')''')
-    prs.add_option('-O', '--output-output_format',
+    prs.add_option('-O', '--output-format', '--output-filetype',
                    dest='_output_format',
                    action='store',
                    default='txt',
@@ -1140,7 +1140,7 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
             log.setLevel(logging.DEBUG)
             log.debug(('opts', opts))
 
-    if 'version' in opts:
+    if opts.get('version'):
         print(__version__)
         return 0
 
