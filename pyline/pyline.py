@@ -1036,6 +1036,11 @@ def get_option_parser():
                    dest='quiet',
                    action='store_true',)
 
+    prs.add_option('--version',
+                   dest='version',
+                   action='store_true',
+                   help='Print the version string')
+
     return prs
 
 
@@ -1134,6 +1139,10 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
             log = logging.getLogger()
             log.setLevel(logging.DEBUG)
             log.debug(('opts', opts))
+
+    if 'version' in opts:
+        print(__version__)
+        return 0
 
     opts['col_map'] = collections.OrderedDict()
     if opts.get('col_mapstr'):
