@@ -1140,7 +1140,7 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
             log.setLevel(logging.DEBUG)
             log.debug(('opts', opts))
 
-    if 'version' in opts:
+    if opts.get('version'):
         print(__version__)
         return 0
 
