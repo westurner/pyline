@@ -1110,7 +1110,7 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
 
     prs = get_option_parser()
 
-    args = list(args) if args is not None else [] # sys.argv[1:]
+    argv = args = list(args) if args is not None else [] # sys.argv[1:]
     if opts is None:
         (opts, args) = prs.parse_args(args)
     optsdict = None
@@ -1132,10 +1132,10 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
 
         if opts.get('verbose'):
             log.setLevel(logging.DEBUG)
-            log.debug(('opts', opts))
     else:
         log.setLevel(logging.WARN)
     log.info(('pyline.version', __version__))
+    log.info(('argv', argv))
     log.info(('args', args))
 
     if opts.get('version'):
