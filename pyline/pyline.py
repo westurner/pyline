@@ -249,7 +249,7 @@ def pyline(iterable,
         #            l.lower() for l in regex_options
         #                if l.lower() in REGEX_OPTIONS),
         #        _regexstr)
-        log.debug("_rgx = %r" % _regexstr)
+        log.info(('_rgx', _regexstr))
         _rgx = re.compile(_regexstr)
 
     Path = str
