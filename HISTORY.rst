@@ -6,11 +6,24 @@ History
 
 
 
-release/0.3.10 (2016-02-14 21:55:05 -0600)
+
+release/0.3.11 (2016-02-14 22:07:45 -0600)
 ++++++++++++++++++++++++++++++++++++++++++
 ::
 
-   git log --reverse --pretty=format:'* %s [%h]' v0.3.9..release/0.3.10
+   git log --reverse --pretty=format:'* %s [%h]' v0.3.10..release/0.3.11
+
+* MRG: Merge tag 'v0.3.10' into develop [ed296ea]
+* BLD: tox.ini: testenv/deps/jinja2 [1a6c2f5]
+* BLD: tox.ini, requirements.txt: add jinja2 to requirements.txt [e267a1e]
+* RLS,DOC: setup.py,pyline.py: version 0.3.11 [21bd6e9]
+
+
+v0.3.10 (2016-02-14 21:56:36 -0600)
++++++++++++++++++++++++++++++++++++
+::
+
+   git log --reverse --pretty=format:'* %s [%h]' v0.3.9..v0.3.10
 
 * MRG: Merge tag 'v0.3.9' into develop [f7c8a16]
 * BUG,UBY: pyline.py: logging config (default INFO, -q/--quiet, -v/--verbose (DEBUG)) [8a060ab]
@@ -19,6 +32,8 @@ release/0.3.10 (2016-02-14 21:55:05 -0600)
 * BUG,REF: opts['cmd'], main->(int, results[]), log opts after all config [3cf9585]
 * UBY: pyline.py: log.info(('_rgx', _regexstr)) [02bd234]
 * RLS,DOC: setup.py,pyline.py: version 0.3.10 [ea6a1fd]
+* DOC: HISTORY.rst: git-changelog.py --hdr=+ --rev 'release/0.3.10' | pbcopy [5266662]
+* MRG: Merge branch 'release/0.3.10' [aa2529a]
 
 
 v0.3.9 (2016-02-14 17:58:36 -0600)
@@ -286,7 +301,6 @@ v0.1.0 (2014-05-12 04:03:15 -0500)
 * BLD: Update tox.ini, .travis.yml, reqs, docs/conf [13b5487]
 * CLN: pyline cleanup [9724f8e]
 * CLN: update .hgignore [59196b7]
-
 
 
 
