@@ -614,7 +614,6 @@ class TestPylineJinja(unittest.TestCase):
 
     def test_pyline_jinja__testtemplate(self):
         iterable = TEST_INPUT_A0
-        results = []
         template_name = 'obj-newline.jinja2'
         templatespath = os.path.realpath(os.path.join(
             os.path.dirname(__file__),
@@ -623,13 +622,14 @@ class TestPylineJinja(unittest.TestCase):
             'templates'))
         templatepath = os.path.join(templatespath, template_name)
         output_formatstr = 'jinja:template={}'.format(templatepath)
-        retcode = pyline.main(
+        results = []
+        retcode, _results = pyline.main(
             #args=['-O', 'jinja:template=obj-newline.jinja'],
             args=['-O', output_formatstr],
             results=results,
             iterable=iterable)
         self.assertEqual(0, retcode)
-        self.assertTrue(results)
+        self.assertEqual(results, _results)
 
 if __name__ == '__main__':
     sys.exit(unittest.main())
