@@ -6,19 +6,34 @@ History
 
 
 
-
-
-release/0.3.9 (2016-02-14 17:56:26 -0600)
-+++++++++++++++++++++++++++++++++++++++++
+release/0.3.10 (2016-02-14 21:55:05 -0600)
+++++++++++++++++++++++++++++++++++++++++++
 ::
 
-   git log --reverse --pretty=format:'* %s [%h]' v0.3.8..release/0.3.9
+   git log --reverse --pretty=format:'* %s [%h]' v0.3.9..release/0.3.10
+
+* MRG: Merge tag 'v0.3.9' into develop [f7c8a16]
+* BUG,UBY: pyline.py: logging config (default INFO, -q/--quiet, -v/--verbose (DEBUG)) [8a060ab]
+* UBY,DOC: pyline.py: log.info(('pyline.version', __version__)) at startup [da1e883]
+* BUG,UBY: pyline.py: log.info(('argv', argv)) [ede1d5e]
+* BUG,REF: opts['cmd'], main->(int, results[]), log opts after all config [3cf9585]
+* UBY: pyline.py: log.info(('_rgx', _regexstr)) [02bd234]
+* RLS,DOC: setup.py,pyline.py: version 0.3.10 [ea6a1fd]
+
+
+v0.3.9 (2016-02-14 17:58:36 -0600)
+++++++++++++++++++++++++++++++++++
+::
+
+   git log --reverse --pretty=format:'* %s [%h]' v0.3.8..v0.3.9
 
 * ENH: pyline.py: --version arg [a38bf5a]
 * MRG: Merge tag 'v0.3.8' into develop [85cd8e9]
 * BUG,REF: pyline.py: output-filetype/-> output-format [fbcd9e2]
 * BUG: pyline.py: only print version when opts.get('version') [ef8ac20]
 * RLS,DOC: setup.py,pyline.py: version 0.3.9 [5f2c4a6]
+* DOC: HISTORY.rst: git-changelog.py --hdr=+ --rev 'release/0.3.9' | pbcopy [ce95bae]
+* MRG: Merge branch 'release/0.3.9' [38e0393]
 
 
 v0.3.8 (2016-02-14 17:34:08 -0600)
@@ -271,6 +286,7 @@ v0.1.0 (2014-05-12 04:03:15 -0500)
 * BLD: Update tox.ini, .travis.yml, reqs, docs/conf [13b5487]
 * CLN: pyline cleanup [9724f8e]
 * CLN: update .hgignore [59196b7]
+
 
 
 
