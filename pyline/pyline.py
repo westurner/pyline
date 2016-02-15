@@ -1135,6 +1135,7 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
             log.debug(('opts', opts))
     else:
         log.setLevel(logging.WARN)
+    log.info(('pyline.version', __version__))
     log.info(('args', args))
 
     if opts.get('version'):
