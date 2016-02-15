@@ -28,6 +28,7 @@ pyline
 Pyline is a grep-like, sed-like, awk-like command-line tool for
 line-based text processing in Python.
 
+.. contents:: 
 
 Features
 ==========
