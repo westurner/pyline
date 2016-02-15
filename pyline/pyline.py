@@ -1140,7 +1140,7 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
 
     if opts.get('version'):
         print(__version__)
-        return 0
+        return 0, None
 
     opts['col_map'] = collections.OrderedDict()
     if opts.get('col_mapstr'):
@@ -1163,9 +1163,7 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
                 cmd = 'obj'
         opts['cmd'] = cmd.strip()
 
-    log.info(('cmd', cmd))
-    log.info(('opts', opts))
-
+    log.info(('cmd', opts['cmd']))
     # opts['attrs'] = PylineResult._fields # XX
     opts['attrs'] = list(opts['col_map'].keys()) if 'col_map' in opts else None
 
@@ -1197,6 +1195,8 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
             opts['_output_format'] = 'json'
             #TODO
         log.info(('_output_format', opts['_output_format']))
+
+        log.info(('opts', opts))
 
         writer = ResultWriter.get_writer(
             opts['_output'],
@@ -1240,9 +1240,10 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
     # results
     # sorted_results
     # if passed, results are .append-ed to results
-    return 0
+    return 0, results
 
 
 if __name__ == "__main__":
     import sys
-    sys.exit(main(args=sys.argv[1:]))
+    retval, _ = main(args=sys.argv[1:])
+    sys.exit(retval)
