@@ -71,7 +71,7 @@ Shell::
 
 """
 
-__version__ = version = "0.3.11"
+__version__ = version = "0.3.12"
 
 import cgi
 import csv
