@@ -7,16 +7,33 @@ History
 
 
 
-release/0.3.11 (2016-02-14 22:07:45 -0600)
+
+
+release/0.3.12 (2016-02-16 16:03:25 -0600)
 ++++++++++++++++++++++++++++++++++++++++++
 ::
 
-   git log --reverse --pretty=format:'* %s [%h]' v0.3.10..release/0.3.11
+   git log --reverse --pretty=format:'* %s [%h]' v0.3.11..release/0.3.12
+
+* MRG: Merge tag 'v0.3.11' into develop [98adc78]
+* DOC: README.rst: add .. contents:: [4416581]
+* TST,UBY: pyline.py, scripts/pyline.py: symlinks to pyline/pyline.py [2fda52e]
+* UBY,BUG: pyline.py: loglevels [WARN], -v/--verbose/DEBUG, -q/--quiet/ERROR [07fbc09]
+* RLS,DOC: setup.py,pyline.py: version 0.3.12 [0cb05f3]
+
+
+v0.3.11 (2016-02-14 22:29:55 -0600)
++++++++++++++++++++++++++++++++++++
+::
+
+   git log --reverse --pretty=format:'* %s [%h]' v0.3.10..v0.3.11
 
 * MRG: Merge tag 'v0.3.10' into develop [ed296ea]
 * BLD: tox.ini: testenv/deps/jinja2 [1a6c2f5]
 * BLD: tox.ini, requirements.txt: add jinja2 to requirements.txt [e267a1e]
 * RLS,DOC: setup.py,pyline.py: version 0.3.11 [21bd6e9]
+* DOC: HISTORY.rst: git-changelog.py --hdr=+ --rev 'release/0.3.11' | pbcopy [efc24ce]
+* MRG: Merge branch 'release/0.3.11' [9c05df0]
 
 
 v0.3.10 (2016-02-14 21:56:36 -0600)
