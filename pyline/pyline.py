@@ -324,9 +324,9 @@ def pyline(iterable,
         rgx = _rgx and _rgx.match(line) or None
 
         p = path = None
-        if path_tools_pathpy or path_tools_pathlib and line.rstrip():
+        if path_tools_pathpy or path_tools_pathlib:
             try:
-                p = path = Path(line.strip()) or None
+                p = path = Path(line) or None
             except Exception as e:
                 log.exception(e)
                 pass
