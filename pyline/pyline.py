@@ -71,7 +71,7 @@ Shell::
 
 """
 
-__version__ = version = "0.3.15"
+__version__ = version = "0.3.16"
 
 import cgi
 import csv
@@ -1250,7 +1250,7 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
 
 def main_entrypoint():
     import sys
-    retval, _ = main(args=sys.argv[0:])
+    retval, _ = main(args=sys.argv[1:])
     sys.exit(retval)
 
 
