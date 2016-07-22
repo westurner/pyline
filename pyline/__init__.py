@@ -5,4 +5,4 @@ __version__ = '0.3.6'
 
 import pyline
 
-__main__ = pyline.main
+# __main__ = pyline.main_entrypoint
