@@ -73,7 +73,7 @@ def build_long_description():
 
 setup(
     name='pyline',
-    version='0.3.14',
+    version='0.3.15',
     description=(
         'Pyline is a grep-like, sed-like, awk-like command-line tool '
         'for line-based text processing in Python.'),
