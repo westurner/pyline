@@ -1248,7 +1248,11 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
     return 0, results
 
 
-if __name__ == "__main__":
+def main_entrypoint():
     import sys
-    retval, _ = main(args=sys.argv[1:])
+    retval, _ = main(args=sys.argv[0:])
     sys.exit(retval)
+
+
+if __name__ == "__main__":
+    main_entrypoint()
