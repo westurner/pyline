@@ -102,7 +102,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'pyline=pyline.pyline:main'
+            'pyline=pyline.pyline:main_entrypoint'
         ]
     },
     test_suite='tests',

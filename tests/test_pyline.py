@@ -432,6 +432,18 @@ class TestPylineMain(LoggingTestCase, unittest.TestCase):
                 self.log.exception(e)
                 raise
 
+class TestPylineConsoleMain(unittest.TestCase):
+    def test_pyline_console_main_0(self):
+        # note: this expects that pyline is installed with either:
+        #   python setup.py develop # or
+        #   python setup.py install
+        from distutils.spawn import find_executable
+        pyline_bin = find_executable('pyline')
+        self.assertTrue(pyline_bin)
+        cmd = [pyline_bin, '--help']
+        import subprocess
+        ret = subprocess.check_call(cmd)
+        self.assertEqual(ret, 0)
 
 class TestPylinePyline(SequenceTestCase, unittest.TestCase):
     def test_30_pyline_codefunc(self):
