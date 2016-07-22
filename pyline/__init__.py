@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-__version__ = '0.3.14'
 
 import pyline
+__version__ = version = pyline.version
 
 # __main__ = pyline.main_entrypoint
