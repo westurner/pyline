@@ -1250,7 +1250,7 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
 
 def main_entrypoint():
     import sys
-    retval, _ = main(args=sys.argv[0:])
+    retval, _ = main(args=sys.argv[1:])
     sys.exit(retval)
 
 
