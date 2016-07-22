@@ -6,11 +6,21 @@ History
 
 
 
-release/0.3.15 (2016-07-22 11:32:35 -0500)
-++++++++++++++++++++++++++++++++++++++++++
+hotfix/0.3.16 (2016-07-22 11:41:13 -0500)
++++++++++++++++++++++++++++++++++++++++++
 ::
 
-   git log --reverse --pretty=format:'* %s [%h]' v0.3.14..release/0.3.15
+   git log --reverse --pretty=format:'* %s [%h]' v0.3.15..hotfix/0.3.16
+
+* BUG: pyline.py: sys.argv\[1:\] (#7) \[a548405\]
+* RLS: pyline v0.3.16 \[b17153a\]
+
+
+v0.3.15 (2016-07-22 11:34:56 -0500)
++++++++++++++++++++++++++++++++++++
+::
+
+   git log --reverse --pretty=format:'* %s [%h]' v0.3.14..v0.3.15
 
 * MRG: Merge tag 'v0.3.12' into develop \[b4a3ec7\]
 * BUG: include files named \s+ with -p/--pathpy or --pathlib (fixes #24) \[6c3f658\]
@@ -18,6 +28,8 @@ release/0.3.15 (2016-07-22 11:32:35 -0500)
 * MRG: Merge tag 'v0.3.14' into develop \[b27731a\]
 * ETC: pyline/__init__.py: __version__ = version = pyline.version \[4065820\]
 * RLS: setup.py, pyline.py: version='0.3.15' \[a83ad49\]
+* DOC: HISTORY.rst: git-changelog.py -r "release/0.3.15" --hdr="+"\` \[cfd26be\]
+* MRG: Merge branch 'release/0.3.15' \[2225fd6\]
 
 
 v0.3.14 (2016-07-22 11:27:03 -0500)
