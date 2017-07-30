@@ -18,7 +18,7 @@ Features:
 * Output as ``txt``, ``csv``, ``tsv``, ``json``, ``html``
   (``-O|--output-format=csv``)
 * Output as Markdown/ReStructuredText ``checkbox`` lists
-  (``-O|--output-format=checkbok``)
+  (``-O|--output-format=checkbox``)
 * (Lazy) sorting (``-s``, ``--sort-asc``, ``-S``, ``--sort-desc``) # XXX TODO
 * Path.py or pathlib objects from each line (``-p``)
 * ``namedtuple``s, ``yield``ing generators
