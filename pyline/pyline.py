@@ -71,7 +71,7 @@ Shell::
 
 """
 
-__version__ = version = "0.3.16"
+__version__ = '0.3.17'
 
 import cgi
 import csv
@@ -317,6 +317,8 @@ def pyline(iterable,
             else:
                 return obj
 
+    endl = '\n'
+
     global_ctxt = globals()
     for i, obj in enumerate(iterable):
         l = line = o = obj
@@ -326,7 +328,12 @@ def pyline(iterable,
         p = path = None
         if path_tools_pathpy or path_tools_pathlib:
             try:
-                p = path = Path(line) or None
+                _line = (line[:-1*len(endl)]
+                         if line.endswith(endl) else line)
+                if _line:
+                    p = path = Path(_line) or None
+                else:
+                    p = None
             except Exception as e:
                 log.exception(e)
                 pass

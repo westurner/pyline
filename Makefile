@@ -51,40 +51,50 @@ docs:
 	$(MAKE) -C docs html
 	@#$(MAKE) open docs/_build/html/index.html
 
-release: dist
-	#	 ver=v0.1.1
-	## update HISTORY.txt
-	#    release date
-	#    release version
-	#    summary
-	## update version in setup.py
-	#    sed "s/version='\(.*\)'/version='${ver}'/g"
-	## update version in pyline/__init__.py
-	#    sed "s/__version__ = '\(.*\)'/__version__ = '${ver}'/g" 
-	## add updated version to repository
-	#    hg commit -m setup.py pyline/__init__.py
-	#    git commit -m setup.py pyline/__init__.py
-	## tag the release in the repository
-	##   hg tag "v${ver}"
-	#    git tag "v${ver}"
-	## push the changes
-	#    hg push
-	#    git push
-	## update http://github.com/westurner/pyline/releases
-	## with a new tagged release
-	#	 browse to url, select version tag, click 'Edit release'
-	#	 set the release name to "pyline v${ver}"
+_setversion:
+	sed -i "s/version='\(.*\)'/version='$(version)'/g" ./setup.py
+	sed -i "s/^__version__ =\(.*\)$$/__version__ = '$(version)'/g" pyline/pyline.py
+
+setversion:
+	@# Usage:
+	@#   make setversion version=0.3.17
+	git diff --exit-code ./setup.py ./pyline/pyline.py && \
+		echo "ERROR: There are existing changes. Exiting." >&2 && false
+	$(MAKE) _setversion version=$(version)
+	git diff --exit-code ./setup.py pyline/pyline.py || true
+	git commit -m "RLS: setup.py, pyline.py: version=$(version)" \
+		setup.py pyline/pyline.py
+
+release:
+	@# Usage:
+	@#   make release version=0.3.17
+	#	 version=v0.3.17
+	## Start a new HubFlow release
+	git hf release start '$(version)'
+	## update version in setup.py and pyline.py
+	$(MAKE) setversion version=$(version)
 	## register with pypi
 	#    python setup.py build register
 	## generate a source distribution and upload to pypi
 	#python setup.py bdist_wheel upload
+	$(MAKE) dist
+	git hf release finish '$(version)'
+	$(MAKE) twine
+	## create a new tagged release
+	#    update http://github.com/westurner/pyline/releases
+	#	 browse to url, select version tag
+	#	 - [ ] click 'Edit release'
+	#	 - [ ] set the release title to "pyline v${ver}"
+	#	 - [ ] (optionally) paste the changelog into the release description
+	python -m webbrowser 'https://github.com/westurner/pyline/releases/edit/$(version)'
 
 dist: clean
 	python setup.py sdist
 	python setup.py bdist_wheel
-	ls -l dist
+	ls -l dist/*
 
 twine:
+	# PyPI: https://pypi.org/account/login/
 	twine upload ./dist/*
 
 docs_rsync_to_local:
