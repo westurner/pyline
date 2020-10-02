@@ -88,15 +88,30 @@ import sys
 from collections import namedtuple
 from functools import partial
 
+IS_PYTHON2 = sys.version_info.major == 2
+
 if sys.version_info.major >= 3:
+    basestring = str
     unicode = str
     from html import escape as html_escape
+
+    def itervalues(x):
+        return x.values()
+
+    def iteritems(x):
+        return x.items()
 else:
     from cgi import escape as html_escape
 
+    def itervalues(x):
+        return x.itervalues()
+
+    def iteritems(x):
+        return x.iteritems()
+
 EPILOG = __doc__  # """  """
 
-REGEX_DOC = """
+REGEX_DOC = r"""
 I  IGNORECASE  Perform case-insensitive matching.
 L  LOCALE      Make \w, \W, \b, \B, dependent on the current locale.
 M  MULTILINE   "^" matches the beginning of lines (after a newline)
@@ -138,13 +153,17 @@ class PylineResult(Result):
         if result is None or result is False:
             return result
 
-        elif hasattr(self.result, 'itervalues'):
-            result = odelim.join(unicode(s) for s in self.result.itervalues())
+        elif hasattr(self.result, 'itervalues') or hasattr(self.result, 'values'):
+            result = odelim.join(unicode(s) for s in itervalues(self.result))
+
+        elif isinstance(self.result, (basestring, unicode)):
+            if result[-1] == '\n':   # TODO: remove_one_trailing_cr
+                result = result[:-1]
 
         elif hasattr(self.result, '__iter__'):
             result = odelim.join(unicode(s) for s in result)
 
-        else:
+        elif hasattr(self.result, 'rstrip'):
             if result[-1] == '\n':
                 result = result[:-1]
 
@@ -158,21 +177,24 @@ class PylineResult(Result):
         if self.result is None or self.result is False:
             yield self.result
 
-        elif hasattr(self.result, 'itervalues'):
-            for col in self.result.itervalues():
+        elif hasattr(self.result, 'itervalues') or hasattr(self.result, 'values'):
+            for col in itervalues(self.result):
                 yield col
+
+        elif hasattr(self.result, 'rstrip'):
+            if self.result[-1] == '\n':   # TODO: remove_one_trailing_cr
+                yield self.result[:-1]
+            else:
+                yield self.result
 
         elif hasattr(self.result, '__iter__'):
             for col in self.result:
                 yield col
 
-        elif hasattr(self.result, 'rstrip'):
-            yield self.result.rstrip()
-
     def _numbered_str(self, odelim):
         record = self._numbered()
         return ' %4d%s%s' % (
-            record.next(),
+            next(record),
             odelim,
             unicode(odelim).join(str(x) for x in record))
 
@@ -262,7 +284,7 @@ def pyline(iterable,
     Path = str
     if path_tools_pathpy:
         import path as pathpy
-        Path = pathpy.path
+        Path = pathpy.Path
     if path_tools_pathlib:
         import pathlib
         Path = pathlib.Path
@@ -536,7 +558,7 @@ def sort_by(iterable,
         reverse (bool): (True, Descending), (False, Ascending) default: False
         col_map (None, dict): dict mapping column n to a typefunc
         default_type (None, callable): type callable (default: None)
-        default_value (\*): default N/A value for columns not specified
+        default_value (\\*): default N/A value for columns not specified
                             in col_map (default: None)
     Returns:
         list: sorted list of lines/rows
@@ -607,7 +629,7 @@ def str2boolintorfloat(str_):
     Returns:
         object: casted ``{boot, float, int, or str_.__class__}``
     """
-    match = re.match('([\d\.]+)', str_)
+    match = re.match(r'([\d\.]+)', str_)
     type_ = None
     if not match:
         type_ = str_.__class__
@@ -864,7 +886,7 @@ class ResultWriter_html(ResultWriter):
 
     def _html_row(self, obj):
         yield '\n<tr>'
-        for attr, col in obj._asdict().iteritems():  # TODO: zip(_fields, ...)
+        for attr, col in iteritems(obj._asdict()):  # TODO: zip(_fields, ...)
             yield "<td%s>" % (
                 attr is not None and (' class="%s"' % attr) or '')
             if hasattr(col, '__iter__'):
@@ -1188,23 +1210,38 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
         if iterable is not None:
             opts['_file'] = iterable
         else:
-            if opts.get('file') is '-':
+            if opts.get('file') == '-':
                 # opts._file = sys.stdin
-                opts['_file'] = codecs.getreader('utf8')(sys.stdin)
+                if IS_PYTHON2:
+                    opts['_file'] = codecs.getreader('utf8')(sys.stdin)
+                else:
+                    opts['_file'] = sys.stdin
             else:
-                opts['_file'] = codecs.open(opts['file'], 'r', encoding='utf8')
+                if IS_PYTHON2:
+                    opts['_file'] = codecs.open(opts['file'], 'r', encoding='utf8')
+                else:
+                    opts['_file'] = open(opts['file'], 'r', encoding='utf8')
 
         if output is not None:
             opts['_output'] = output
         else:
-            if opts.get('output') is '-':
+            if opts.get('output') == '-':
                 # opts._output = sys.stdout
-                opts['_output'] = codecs.getwriter('utf8')(sys.stdout)
+                if IS_PYTHON2:
+                    opts['_output'] = codecs.getwriter('utf8')(sys.stdout)
+                else:
+                    opts['_output'] = sys.stdout
             elif opts.get('output'):
-                opts['_output'] = codecs.open(opts['output'], 'w', encoding='utf8')
+                if IS_PYTHON2:
+                    opts['_output'] = codecs.open(opts['output'], 'w', encoding='utf8')
+                else:
+                    opts['_output'] = open(opts['output'], 'w', encoding='utf8')
             else:
                 # opts._output = sys.stdout
-                opts['_output'] = codecs.getwriter('utf8')(sys.stdout)
+                if IS_PYTHON2:
+                    opts['_output'] = codecs.getwriter('utf8')(sys.stdout)
+                else:
+                    opts['_output'] = sys.stdout
 
         if opts.get('_output_format') is None:
             #opts._output_format = DEFAULTS['_output_format']
