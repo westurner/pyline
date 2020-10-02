@@ -73,7 +73,6 @@ Shell::
 
 __version__ = '0.3.17'
 
-import cgi
 import csv
 import collections
 import codecs
@@ -88,6 +87,12 @@ import sys
 
 from collections import namedtuple
 from functools import partial
+
+if sys.version_info.major >= 3:
+    unicode = str
+    from html import escape as html_escape
+else:
+    from cgi import escape as html_escape
 
 EPILOG = __doc__  # """  """
 
@@ -846,7 +851,7 @@ class ResultWriter_json(ResultWriter):
 
 class ResultWriter_html(ResultWriter):
     output_format = 'html'
-    escape_func = staticmethod(cgi.escape)
+    escape_func = staticmethod(html_escape)
 
     def header(self, *args, **kwargs):
         self._output.write("<table>")
@@ -882,7 +887,7 @@ class ResultWriter_html(ResultWriter):
 
 class ResultWriter_jinja(ResultWriter):
     output_format = 'jinja'
-    escape_func = staticmethod(cgi.escape)
+    escape_func = staticmethod(html_escape)
 
     def setup(self, *args, **kwargs):
         log.debug(('args', args))

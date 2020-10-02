@@ -15,9 +15,14 @@ import os
 import pprint
 import sys
 import tempfile
+import types
 import unittest
 
-from itertools import izip_longest
+try:
+    from itertools import izip_longest
+except ImportError:
+    from itertools import zip_longest as izip_longest
+    basestring = str
 
 try:
     import StringIO as io   # Python 2
@@ -452,13 +457,13 @@ class TestPylinePyline(SequenceTestCase, unittest.TestCase):
 
         codefunc = lambda x: x['line'][::-1]
         output = pyline.pyline(iterable, codefunc=codefunc)
-        self.assertTrue(hasattr(output, 'next'))
+        self.assertTrue(isinstance(output, types.GeneratorType))
         output_list = [result.result for result in output]
         self.assertEqual(output_list, outrable)  # ...
 
         cmd = 'line[::-1]'
         output2 = pyline.pyline(iterable, cmd=cmd)
-        self.assertTrue(hasattr(output2, 'next'))
+        self.assertTrue(isinstance(output2, types.GeneratorType))
         output_list2 = [result.result for result in output2]
         self.assertEqual(output_list2, outrable)  # ...
 
