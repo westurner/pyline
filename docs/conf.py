@@ -31,7 +31,7 @@ project_root = os.path.dirname(cwd)
 # version is used.
 sys.path.insert(0, project_root)
 
-import pyline
+from pyline import pyline
 
 # -- General configuration ---------------------------------------------
 
@@ -43,7 +43,6 @@ import pyline
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
-    'sphinxcontrib.napoleon',
     'sphinxcontrib.programoutput']
 
 # Add any paths that contain templates here, relative to this directory.
@@ -60,7 +59,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'pyline'
-copyright = u'2014, Wes Turner'
+copyright = u'2020, Wes Turner'
 
 # The version info for the project you're documenting, acts as replacement
 # for |version| and |release|, also used in various other places throughout

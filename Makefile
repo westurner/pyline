@@ -32,7 +32,10 @@ lint:
 	flake8 '$(APP)' tests
 
 test:
-	python setup.py test
+	pytest -v ./tests/
+
+test-coverage:
+	pytest -v --cov=pyline --cov-report=term-missing ./tests/
 
 test-all:
 	tox
