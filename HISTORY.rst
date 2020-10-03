@@ -3,17 +3,30 @@
 History
 =========
 
-release/0.3.19 (2020-10-02 20:42:11 -0400)
+release/0.3.20 (2020-10-02 20:51:19 -0400)
 ++++++++++++++++++++++++++++++++++++++++++
 ::
 
-   git log --reverse --pretty=format:'* %s [%h]' v0.3.18..release/0.3.19
+   git log --reverse --pretty=format:'* %s [%h]' v0.3.19..release/0.3.20
+
+* MRG: Merge tag 'v0.3.19' into develop \[fc2163e\]
+* BLD: setup.py: 3 & 3.8 trove classifiers \[6bf10e0\]
+* RLS: pyline.py,setup.py: v0.3.20 \[242a75a\]
+
+
+v0.3.19 (2020-10-02 20:44:25 -0400)
++++++++++++++++++++++++++++++++++++
+::
+
+   git log --reverse --pretty=format:'* %s [%h]' v0.3.18..v0.3.19
 
 * MRG: Merge tag 'v0.3.18' into develop \[715618e\]
 * DOC,BLD: HISTORY.rst: \*manually\* fix unquoted/unescaped reference \[9146f39\]
 * BLD: setup.cfg: \[wheel\] -> \[bdist_wheel\] \[ba27bd5\]
 * BLD: setup.py: long_description_content_type='text/x-rst' \[07dc247\]
 * RLS: pyline.py,setup.py: v0.3.19 \[405f3f6\]
+* DOC: HISTORY.rst: output from git-changelog.py \[9088f29\]
+* MRG: Merge branch 'release/0.3.19' \[45110ec\]
 
 
 v0.3.18 (2020-10-02 20:27:08 -0400)
