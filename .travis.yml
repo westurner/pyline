@@ -6,10 +6,11 @@ python:
 #  - "3.3"
   - "2.7"
 #  - "2.6"
+  - "3.8"
   - "pypy"
 
 # command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
-install: pip install -r requirements.txt
+install: pip install tox-travis && pip install -r requirements-test.txt
 
 # command to run tests, e.g. python setup.py test
-script: python setup.py test
+script: tox 
