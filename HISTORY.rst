@@ -3,11 +3,24 @@
 History
 =========
 
-release/0.3.18 (2020-10-02 20:21:43 -0400)
+release/0.3.19 (2020-10-02 20:42:11 -0400)
 ++++++++++++++++++++++++++++++++++++++++++
 ::
 
-   git log --reverse --pretty=format:'* %s [%h]' v0.3.17..release/0.3.18
+   git log --reverse --pretty=format:'* %s [%h]' v0.3.18..release/0.3.19
+
+* MRG: Merge tag 'v0.3.18' into develop \[715618e\]
+* DOC,BLD: HISTORY.rst: \*manually\* fix unquoted/unescaped reference \[9146f39\]
+* BLD: setup.cfg: \[wheel\] -> \[bdist_wheel\] \[ba27bd5\]
+* BLD: setup.py: long_description_content_type='text/x-rst' \[07dc247\]
+* RLS: pyline.py,setup.py: v0.3.19 \[405f3f6\]
+
+
+v0.3.18 (2020-10-02 20:27:08 -0400)
++++++++++++++++++++++++++++++++++++
+::
+
+   git log --reverse --pretty=format:'* %s [%h]' v0.3.17..v0.3.18
 
 * MRG: Merge tag 'v0.3.17' into develop \[09f46ca\]
 * REF,TST: Makefile, requirements-test: switch to pytest, require jinja2 for tests \[999446d\]
@@ -22,6 +35,9 @@ release/0.3.18 (2020-10-02 20:21:43 -0400)
 * MRG: #29 REF,TST,BLD,BUG: Python 3 Support \[cb195b4\]
 * REF: pyline.py: change shebang to \`#!/usr/bin/env python\` from python2 \[5841704\]
 * RLS: pyline.py,setup.py: v0.3.18 \[a1072e2\]
+* DOC: HISTORY.rst: output from git-changelog.py \[c9f7f89\]
+* MRG: Merge branch 'release/0.3.18' \[579ccdf\]
+
 
 
 v0.3.17 (2018-12-23 14:41:45 -0500)
