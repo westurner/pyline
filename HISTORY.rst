@@ -3,17 +3,52 @@
 History
 =========
 
-
-
-
-hotfix/0.3.16 (2016-07-22 11:41:13 -0500)
-+++++++++++++++++++++++++++++++++++++++++
+release/0.3.18 (2020-10-02 20:21:43 -0400)
+++++++++++++++++++++++++++++++++++++++++++
 ::
 
-   git log --reverse --pretty=format:'* %s [%h]' v0.3.15..hotfix/0.3.16
+   git log --reverse --pretty=format:'* %s [%h]' v0.3.17..release/0.3.18
+
+* MRG: Merge tag 'v0.3.17' into develop \[09f46ca\]
+* REF,TST: Makefile, requirements-test: switch to pytest, require jinja2 for tests \[999446d\]
+* REF,TST: pyline.py, test_pyline.py: py3 \[7365938\]
+* WIP: __init__: change import for py3 (TODO: check py2 compatibility) \[fe61a93\]
+* BLD: requirements\[-test\]: remove wheel, -test -> reqs.txt \[716a9b3\]
+* REF,BUG: py3, pathpy import, rawstrs, only strip one newline when numbering lines \[f7b3281\]
+* BLD: tox.ini,.travis.yml: use tox-travis, envs=py37,py38 \[a2a4a82\]
+* DOC,BLD: docs/reqs,docs/conf: copyright, fix pyline import \[036bac8\]
+* BLD,TST: setup.py: setup.py:test calls pytest -v \[ced27bb\]
+* REF,BUG: pyline.py: when sorting, sort None as '' (and log extensively for other sort comparison TypeError exceptions) \[9248acb\]
+* MRG: #29 REF,TST,BLD,BUG: Python 3 Support \[cb195b4\]
+* REF: pyline.py: change shebang to \`#!/usr/bin/env python\` from python2 \[5841704\]
+* RLS: pyline.py,setup.py: v0.3.18 \[a1072e2\]
+
+
+v0.3.17 (2018-12-23 14:41:45 -0500)
++++++++++++++++++++++++++++++++++++
+::
+
+   git log --reverse --pretty=format:'* %s [%h]' v0.3.16..v0.3.17
+
+* MRG: Merge tag 'v0.3.15' into develop \[e1d7768\]
+* MRG: Merge tag 'v0.3.16' into develop \[3a6fec4\]
+* DOC: pyline.py: typo: checkbok -> checkbox \[a0917c5\]
+* BUG,ENH: pyline.py: -p: strip one trailing '\n' from line before parsing as path \[47efdc9\]
+* RLS: setup.py, pyline.py: v0.3.17 \[9ef9d41\]
+* BLD,DOC: Makefile: setversion, release docs \[5cfc1e4\]
+* MRG: Merge branch 'release/0.3.17' \[618920a\]
+
+
+v0.3.16 (2016-07-22 11:42:57 -0500)
++++++++++++++++++++++++++++++++++++
+::
+
+   git log --reverse --pretty=format:'* %s [%h]' v0.3.15..v0.3.16
 
 * BUG: pyline.py: sys.argv\[1:\] (#7) \[a548405\]
 * RLS: pyline v0.3.16 \[b17153a\]
+* DOC: HISTORY.rst: git-changelog.py \[9725f8d\]
+* MRG: Merge branch 'hotfix/0.3.16' \[c18d61c\]
 
 
 v0.3.15 (2016-07-22 11:34:56 -0500)
