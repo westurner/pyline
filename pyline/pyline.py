@@ -71,7 +71,7 @@ Shell::
 
 """
 
-__version__ = '0.3.19'
+__version__ = '0.3.20'
 
 import csv
 import collections
