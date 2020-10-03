@@ -3,11 +3,24 @@
 History
 =========
 
-release/0.3.18 (2020-10-02 20:21:43 -0400)
+release/0.3.19 (2020-10-02 20:42:11 -0400)
 ++++++++++++++++++++++++++++++++++++++++++
 ::
 
-   git log --reverse --pretty=format:'* %s [%h]' v0.3.17..release/0.3.18
+   git log --reverse --pretty=format:'* %s [%h]' v0.3.18..release/0.3.19
+
+* MRG: Merge tag 'v0.3.18' into develop \[715618e\]
+* DOC,BLD: HISTORY.rst: \*manually\* fix unquoted/unescaped reference \[9146f39\]
+* BLD: setup.cfg: \[wheel\] -> \[bdist_wheel\] \[ba27bd5\]
+* BLD: setup.py: long_description_content_type='text/x-rst' \[07dc247\]
+* RLS: pyline.py,setup.py: v0.3.19 \[405f3f6\]
+
+
+v0.3.18 (2020-10-02 20:27:08 -0400)
++++++++++++++++++++++++++++++++++++
+::
+
+   git log --reverse --pretty=format:'* %s [%h]' v0.3.17..v0.3.18
 
 * MRG: Merge tag 'v0.3.17' into develop \[09f46ca\]
 * REF,TST: Makefile, requirements-test: switch to pytest, require jinja2 for tests \[999446d\]
@@ -22,6 +35,9 @@ release/0.3.18 (2020-10-02 20:21:43 -0400)
 * MRG: #29 REF,TST,BLD,BUG: Python 3 Support \[cb195b4\]
 * REF: pyline.py: change shebang to \`#!/usr/bin/env python\` from python2 \[5841704\]
 * RLS: pyline.py,setup.py: v0.3.18 \[a1072e2\]
+* DOC: HISTORY.rst: output from git-changelog.py \[c9f7f89\]
+* MRG: Merge branch 'release/0.3.18' \[579ccdf\]
+
 
 
 v0.3.17 (2018-12-23 14:41:45 -0500)
@@ -374,7 +390,7 @@ v0.1.1 (2014-05-12 19:41:54 -0500)
 * LOG: log.info(cmd) .\.. after shell parsing, exception \[c449765\]
 * CLN: pep8 test command kwargs formatting \[993c65a\]
 * DOC: README.rst; ReST doesn't seem to like \`path.py\`_ \.. _path.py:, links \[209ecb5\]
-* TST: Update setup.py test command (runtests -v ./tests/test_\*.py) \[bc84652\]
+* TST: Update setup.py test command (runtests -v ./tests/test\*.py) \[bc84652\]
 * TST: tox.ini: make html rather than sphinx-build \[c96b3b0\]
 * CLN: factor out _import_pathmodule and get_path_module \[d0aebfb\]
 * TST: move tests from pyline.py to tests/test_pyline.py \[477fbb4\]
