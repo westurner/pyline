@@ -2,7 +2,10 @@
 # -*- coding: utf-8 -*-
 
 
-import pyline
-__version__ = version = pyline.version
+try:
+    from . import pyline
+    __version__ = version = pyline.version
+except AttributeError:
+    pass  # TODO
 
 # __main__ = pyline.main_entrypoint

@@ -47,11 +47,10 @@ class PyTestCommand(Command):
 
     def run(self):
         cmd = [sys.executable,
-               os.path.join(SETUPPY_PATH, 'runtests.py'),
-               '-v']
-
-        globstr = os.path.join(SETUPPY_PATH, 'tests/test_*.py')
-        cmd.extend(glob.glob(globstr))
+               "-m", "pytest",
+               "-v",
+               os.path.join(SETUPPY_PATH, "tests/"),
+        ]
 
         cmdstr = ' '.join(cmd)
         print(cmdstr)
@@ -73,7 +72,7 @@ def build_long_description():
 
 setup(
     name='pyline',
-    version='0.3.17',
+    version='0.3.18',
     description=(
         'Pyline is a grep-like, sed-like, awk-like command-line tool '
         'for line-based text processing in Python.'),
