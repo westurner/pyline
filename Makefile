@@ -96,7 +96,10 @@ dist: clean
 	python setup.py bdist_wheel
 	ls -l dist/*
 
-twine:
+dist-check:
+	twine check dist/*
+
+twine: dist-check
 	# PyPI: https://pypi.org/account/login/
 	twine upload ./dist/*
 
