@@ -397,10 +397,10 @@ class TestPylineMain(LoggingTestCase, unittest.TestCase):
 
             ("w", '-O', 'csv', '-s', '0'),
             # TODO: decide what to do about sorted([('a', '1'), ('b', None)])
-            # ("w", '-O', 'csv', '-s', '1'),
-            # ("w", '-O', 'csv', '-s', '1,2'),
-            # ("w", '-O', 'csv', '-S', '1'),
-            # ("w", '-O', 'csv', '-S', '1', '-n'),
+            ("w", '-O', 'csv', '-s', '1'),
+            ("w", '-O', 'csv', '-s', '1,2'),
+            ("w", '-O', 'csv', '-S', '1'),
+            ("w", '-O', 'csv', '-S', '1', '-n'),
 
             ("w", '-O', 'json'),
             ("w", '-O', 'json', '-n'),

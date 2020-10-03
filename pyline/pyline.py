@@ -91,6 +91,7 @@ from functools import partial
 IS_PYTHON2 = sys.version_info.major == 2
 
 if sys.version_info.major >= 3:
+    xrange = range
     basestring = str
     unicode = str
     from html import escape as html_escape
@@ -122,9 +123,9 @@ S  DOTALL      "." matches any character at all, including the newline.
 X  VERBOSE     Ignore whitespace and comments for nicer looking RE's.
 U  UNICODE     Make \w, \W, \b, \B, dependent on the Unicode locale."""
 REGEX_OPTIONS = dict(
-    (l[0],
-        (l[1:14].strip(), l[15:]))
-    for l in REGEX_DOC.split('\n') if l)
+    (line[0],
+        (line[1:14].strip(), line[15:]))
+    for line in REGEX_DOC.split('\n') if line)
 
 STANDARD_REGEXES = {}
 
@@ -606,16 +607,26 @@ def sort_by(iterable,
         Returns:
             tuple: (col2, col0, col1)
         """
-        keyvalue = tuple(keyfunc_iter(obj, sortstr, col_map))
+        keyvalue = tuple(x if x is not None else "" for x in keyfunc_iter(obj, sortstr, col_map))  # TODO: default_value and/or approximate python 2 sort
         errdata = [
             (('keyvalue', keyvalue),
               ('sortstr', sortstr))]
         log.debug((errdata,))
         return keyvalue
 
-    sorted_values = sorted(iterable,
-                  key=keyfunc,
-                  reverse=reverse)
+    try:
+        sorted_values = sorted(iterable,
+                    key=keyfunc,
+                    reverse=reverse)
+    except TypeError:
+        _iterable = list(iterable)
+        log.error(dict(
+            iterable=_iterable,
+            keyfunc=keyfunc,
+            reverse=reverse,
+            keyfunc_applied=[keyfunc(x) for x in _iterable]
+        ))
+        raise
     return sorted_values
 
 
