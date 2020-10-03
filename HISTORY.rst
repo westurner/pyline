@@ -374,7 +374,7 @@ v0.1.1 (2014-05-12 19:41:54 -0500)
 * LOG: log.info(cmd) .\.. after shell parsing, exception \[c449765\]
 * CLN: pep8 test command kwargs formatting \[993c65a\]
 * DOC: README.rst; ReST doesn't seem to like \`path.py\`_ \.. _path.py:, links \[209ecb5\]
-* TST: Update setup.py test command (runtests -v ./tests/test_\*.py) \[bc84652\]
+* TST: Update setup.py test command (runtests -v ./tests/test\*.py) \[bc84652\]
 * TST: tox.ini: make html rather than sphinx-build \[c96b3b0\]
 * CLN: factor out _import_pathmodule and get_path_module \[d0aebfb\]
 * TST: move tests from pyline.py to tests/test_pyline.py \[477fbb4\]
