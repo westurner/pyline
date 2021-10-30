@@ -16,8 +16,8 @@ pyline
 .. image:: https://travis-ci.org/westurner/pyline.png?branch=master
         :target: https://travis-ci.org/westurner/pyline
 
-.. image:: https://pypip.in/d/pyline/badge.png
-       :target: https://pypi.python.org/pypi/pyline
+.. .. image:: https://pypip.in/d/pyline/badge.png
+..       :target: https://pypi.python.org/pypi/pyline
 
 .. _GitHub: https://github.com/westurner/pyline
 .. _PyPi: https://pypi.python.org/pypi/pyline
