@@ -71,7 +71,7 @@ Shell::
 
 """
 
-__version__ = '0.3.20'
+__version__ = '0.3.21'
 
 import csv
 import collections
@@ -267,7 +267,7 @@ def pyline(iterable,
 
     for _importset in modules:
         for _import in _importset.split(','):
-            locals()[_import] = __import__(_import.strip())
+            globals()[_import] = __import__(_import.strip())
 
     _rgx = None
     if regex:
@@ -305,8 +305,8 @@ def pyline(iterable,
             log.info(("cmd", cmd))
             codeobj = compile(cmd, 'command', 'eval')
         except Exception as e:
-            e.message = "%s\ncmd: %s" % (e.message, cmd)
-            log.error(repr(cmd))
+            e.__dict__['cmd'] = cmd
+            log.error(e.__dict__)
             log.exception(e)
             raise
 
