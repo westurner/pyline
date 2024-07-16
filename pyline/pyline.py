@@ -306,8 +306,7 @@ def pyline(iterable,
             codeobj = compile(cmd, 'command', 'eval')
         except Exception as e:
             e.__dict__['cmd'] = cmd
-            e.args.append("cmd: %s" % cmd)
-            log.error(repr(cmd))
+            log.error(e.__dict__)
             log.exception(e)
             raise
 
