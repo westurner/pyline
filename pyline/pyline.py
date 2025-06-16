@@ -361,7 +361,7 @@ def pyline(
 
     global_ctxt = globals()
     for i, obj in enumerate(iterable):
-        l = line = o = obj
+        l = line = o = obj  # noqa: E741
         w = words = [_w for _w in splitfunc(line)]
         rgx = _rgx and _rgx.match(line) or None
 
