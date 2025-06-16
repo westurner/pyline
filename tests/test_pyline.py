@@ -439,16 +439,18 @@ class TestPylineMain(LoggingTestCase, unittest.TestCase):
         TEST_ARGS = ('-f', self.TEST_FILE)
 
         for argset in CMDLINE_TESTS:
-            _args = TEST_ARGS + argset
-            self.log.debug("main%s" % str(_args))
-            try:
-                output = pyline.main(_args)
-                for n in output and output or []:
-                    self.log.debug(n)
-            except Exception as e:
-                self.log.error("cmd: %s" % repr(_args))
-                self.log.exception(e)
-                raise
+            with self.subTest(args=argset):
+                _args = TEST_ARGS + argset
+                self.log.debug("main%s" % str(_args))
+                try:
+                    output = pyline.main(_args)
+                    for n in output and output or []:
+                        self.log.debug(n)
+                except Exception as e:
+                    self.log.error("cmd: %s" % repr(_args))
+                    self.log.exception(e)
+                    raise
+
 
 class TestPylineConsoleMain(unittest.TestCase):
     def test_pyline_console_main_0(self):
