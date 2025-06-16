@@ -84,7 +84,7 @@ import sys
 
 from collections import namedtuple
 from functools import partial
-
+partial
 
 
 __version__ = "0.3.21"
