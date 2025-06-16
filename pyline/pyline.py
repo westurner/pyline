@@ -954,6 +954,7 @@ class ResultWriter_jinja(ResultWriter):
         jinja2_output = self.tmpl.render(**context)
         return self._output.write(jinja2_output)
 
+
 class ResultWriter_checkbox(ResultWriter):
     output_format = 'checkbox'
 
@@ -1118,15 +1119,16 @@ def get_sort_function(**kwargs):  # (sort_asc, sort_desc)
         reverse = True
         log.info((("sort_desc", sortstr), ('reverse', reverse)))
     if sortstr:
-        def sortfunc(iterable,
-                     sortstr=sortstr,
-                     reverse=reverse,
-                     col_map=col_map):
+        def _sortfunc(iterable,
+                      sortstr=sortstr,
+                      reverse=reverse,
+                      col_map=col_map):
             return sort_by(
                 iterable,
                 sortstr,
                 reverse=reverse,
                 col_map=col_map)
+        sortfunc = _sortfunc
     else:
         def null_sortfunc(iterable):
             return iterable
@@ -1179,6 +1181,7 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
     opts = optsdict
 
     log = logging.getLogger(DEFAULT_LOGGER)
+
     # if -q/--quiet is not specified
     if not opts.get('quiet'):
         #logging.basicConfig(
@@ -1188,9 +1191,11 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
         # if -v/--verbose is specified
         if opts.get('verbose'):
             log.setLevel(logging.DEBUG)
+
     # if -q/--quiet is specified
     else:
         log.setLevel(logging.ERROR)
+
     log.info(('pyline.version', __version__))
     log.info(('argv', argv))
     log.info(('args', args))
@@ -1212,7 +1217,7 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
         if not cmd.strip():
             if opts.get('regex'):
                 if (opts.get('_output_format') == 'json'
-                    and '<' in opts.get('regex')):
+                        and '<' in opts.get('regex')):  # TODO:
                     cmd = 'rgx and rgx.groupdict()'
                 else:
                     cmd = 'rgx and rgx.groups()'
@@ -1305,7 +1310,7 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
         writer.footer()
     finally:
         if (getattr(opts.get('_file', codecs.EncodedFile),
-                'fileno', int)() not in (0, 1, 2)):
+                    'fileno', int)() not in (0, 1, 2)):
             opts['_file'].close()
 
     # opts
