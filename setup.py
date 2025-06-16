@@ -4,7 +4,6 @@
 pyline setup.py
 """
 
-import glob
 import logging
 import os
 import subprocess
@@ -31,7 +30,8 @@ log.debug('SETUPPY_PATH: %s' % SETUPPY_PATH)
 
 
 if sys.argv[-1] == 'publish':
-    os.system('python setup.py sdist upload')
+    os.system('python setup.py sdist')
+    os.system('twine upload')
     sys.exit()
 
 
