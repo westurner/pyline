@@ -806,7 +806,11 @@ class ResultWriter(object):
         opts.update(kwargs)
 
         if not cls.is_valid_output_format(_output_format):
-            raise ValueError("_output_format: %r" % _output_format)
+            raise ValueError(
+                "Unknown output format: %r. "
+                "Supported output formats: %r" % (
+                    _output_format,
+                    list(cls.OUTPUT_FILETYPES.keys())))
 
         writer = None
         if _output_format == "txt":
