@@ -455,13 +455,14 @@ class TestPylineConsoleMain(unittest.TestCase):
         # note: this expects that pyline is installed with either:
         #   python setup.py develop # or
         #   python setup.py install
-        from distutils.spawn import find_executable
-        pyline_bin = find_executable('pyline')
+        import shutil
+        pyline_bin = shutil.which('pyline')
         self.assertTrue(pyline_bin)
         cmd = [pyline_bin, '--help']
         import subprocess
         ret = subprocess.check_call(cmd)
         self.assertEqual(ret, 0)
+
 
 class TestPylinePyline(SequenceTestCase, unittest.TestCase):
     def test_30_pyline_codefunc(self):
@@ -482,6 +483,7 @@ class TestPylinePyline(SequenceTestCase, unittest.TestCase):
 
 
 import types
+
 
 class TestColspec(unittest.TestCase):
 
@@ -505,6 +507,7 @@ class TestColspec(unittest.TestCase):
             self.assertTrue(output)
             self.assertIsInstance(output, types.GeneratorType)
             #TODO
+
 
 def wrap_in_pylineresult(iterable, uri=None, meta=None):
     for i, x in enumerate(iterable):
@@ -660,6 +663,7 @@ class TestPylineJinja(unittest.TestCase):
             iterable=iterable)
         self.assertEqual(0, retcode)
         self.assertEqual(results, _results)
+
 
 if __name__ == '__main__':
     sys.exit(unittest.main())
