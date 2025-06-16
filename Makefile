@@ -38,6 +38,9 @@ test-coverage:
 	pytest -v --cov=pyline --cov-report=term-missing ./tests/
 
 test-all:
+	$(MAKE) tox
+
+tox:
 	tox
 
 coverage:
