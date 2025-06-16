@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from __future__ import print_function
-
 """
 
 **pyline**
@@ -71,9 +69,7 @@ Shell::
         pyline.py   # -> ${__DOTFILES}/scripts/pyline.py
 
 """
-
-__version__ = "0.3.21"
-
+from __future__ import print_function
 import csv
 import collections
 import codecs
@@ -88,6 +84,11 @@ import sys
 
 from collections import namedtuple
 from functools import partial
+
+
+
+__version__ = "0.3.21"
+
 
 IS_PYTHON2 = sys.version_info.major == 2
 
