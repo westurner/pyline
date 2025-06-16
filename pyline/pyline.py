@@ -922,15 +922,18 @@ class ResultWriter_html(ResultWriter):
     def footer(self):
         self._output.write('</table>\n')
 
+
 class ResultWriter_jinja(ResultWriter):
     output_format = 'jinja'
-    escape_func = staticmethod(html_escape)
+    escape_func = None  # staticmethod(html_escape)
 
     def setup(self, *args, **kwargs):
         log.debug(('args', args))
         log.debug(('kwargs', kwargs))
-        import jinja2, os
-        self.escape_func = jinja2.escape
+        import jinja2
+        import markupsafe
+        import os
+        self.escape_func = markupsafe.escape
         templatepath = kwargs.get('template', kwargs.get('tmpl'))
         if templatepath is None:
             raise ValueError(
