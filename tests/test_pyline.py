@@ -405,6 +405,11 @@ class TestPylineMain(LoggingTestCase, unittest.TestCase):
             ("w", '-O', 'json'),
             ("w", '-O', 'json', '-n'),
 
+            ("w", '-O', 'jsonlines'),
+            ("w", '-O', 'jsonlines', '-n'),
+            ("w", '-O', 'jsonl'),
+            ("w", '-O', 'jsonl', '-n'),
+
             ("w", '-O', 'tsv'),
 
             ("w", '-O', 'html'),

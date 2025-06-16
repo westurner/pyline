@@ -740,6 +740,8 @@ class ResultWriter(object):
     OUTPUT_FILETYPES = {
         'csv': ",",
         'json': True,
+        'jsonlines': True,
+        'jsonl': True,
         'tsv': "\t",
         'html': True,
         'jinja': True,
@@ -796,7 +798,7 @@ class ResultWriter(object):
                             :py:func:`parse_formatstring`
             Filetypes::
 
-                txt | csv | tsv | json | html | jinja | checkbox
+                txt | csv | tsv | json | jsonlines | html | jinja | checkbox
 
         Returns:
             ResultWriter: a configured ResultWriter subclass instance
@@ -821,6 +823,8 @@ class ResultWriter(object):
             writer = ResultWriter_csv(_output, delimiter='\t', **opts)
         elif _output_format == "json":
             writer = ResultWriter_json(_output)
+        elif _output_format in ("jsonlines", "jsonl"):
+            writer = ResultWriter_jsonlines(_output)
         elif _output_format == "html":
             writer = ResultWriter_html(_output, **opts)
         elif _output_format.startswith("jinja"):
@@ -881,6 +885,20 @@ class ResultWriter_json(ResultWriter):
                 obj._asdict(),
                 indent=2),
             end=',\n',
+            file=self._output)
+
+    write_numbered = write
+
+
+class ResultWriter_jsonlines(ResultWriter):
+    output_format = 'jsonlines'
+
+    def write(self, obj):
+        print(
+            json.dumps(
+                obj._asdict(),
+                indent=0),
+            end='\n',
             file=self._output)
 
     write_numbered = write
@@ -1027,7 +1045,7 @@ def get_option_parser():
                    dest='_output_format',
                    action='store',
                    default='txt',
-                   help=("Output output_format <txt|csv|tsv|json|checkbox|chk|html> "
+                   help=("Output output_format <txt|csv|tsv|json||jsonlines|jsonl||checkbox|chk||html> "
                          "  #default: txt"))
     prs.add_option('-p', '--pathpy',
                    dest='path_tools_pathpy',
