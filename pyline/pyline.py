@@ -84,9 +84,9 @@ import re
 import shlex as _shlex
 import sys
 
-
 from collections import namedtuple
 from functools import partial
+from typing import Optional
 
 IS_PYTHON2 = sys.version_info.major == 2
 
@@ -227,7 +227,6 @@ def log_(*args, **kwargs):
         else:
             return kwargs
 
-from typing import Optional
 def pyline(iterable,
            cmd: Optional[str] = None,
            codefunc=None,
@@ -1003,9 +1002,9 @@ def get_option_parser():
     import optparse
     prs = optparse.OptionParser(
         usage=(
-            "%prog  [-v ] [-f<path>] [-o|--output-file=<path>] \n"
+            "%prog [-v] [-f <path>] [-o|--output-file=<path>] \n"
             "              [-F|--input-delim='\\t'] \n"
-            "              [--ma x|--max-split=3] \n"
+            "              [--max|--max-split=3] \n"
             "              [-d|--output-delimiter='||'] \n"
             "              [-n|--number-lines] \n"
             "              [-m|--modules=<mod2>] \n"
