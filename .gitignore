@@ -47,3 +47,9 @@ output/*/index.html
 
 # Sphinx
 docs/_build
+
+# pytest, run_tests
+cov.xml
+pytest-results.xml
+reports/
+tmp/
