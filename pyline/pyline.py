@@ -77,11 +77,14 @@ import csv
 import collections
 import codecs
 import importlib
+import inspect
 import json
 import logging
+import os
 import textwrap
 import pprint
 import re
+import ast
 import shlex as _shlex
 import sys
 
@@ -237,6 +240,140 @@ def log_(*args, **kwargs):
             return kwargs
 
 
+def _build_command_executor(cmd):
+    """Build an evaluator for expression or statement commands.
+
+    Supports:
+    - single expression commands (eval mode)
+    - multiline / semicolon-separated statement commands (exec mode)
+      where the final expression is returned, or ``result`` if assigned.
+    """
+    try:
+        codeobj = compile(cmd, "command", "eval")
+
+        def _run_eval(global_ctxt, local_ctxt):
+            return eval(codeobj, global_ctxt, local_ctxt)
+
+        return _run_eval
+    except SyntaxError:
+        pass
+
+    module = ast.parse(cmd, mode="exec")
+    has_trailing_expr = bool(module.body) and isinstance(module.body[-1], ast.Expr)
+    if has_trailing_expr:
+        module.body[-1] = ast.Assign(
+            targets=[ast.Name(id="__pyline_result__", ctx=ast.Store())],
+            value=module.body[-1].value,
+        )
+    ast.fix_missing_locations(module)
+    codeobj = compile(module, "command", "exec")
+
+    def _run_exec(global_ctxt, local_ctxt):
+        exec(codeobj, global_ctxt, local_ctxt)
+        if has_trailing_expr:
+            return local_ctxt.get("__pyline_result__")
+        return local_ctxt.get("result")
+
+    return _run_exec
+
+
+def _resolve_callable_from_dotted_path(dotted_path):
+    if ":" in dotted_path:
+        module_path, attr_path = dotted_path.split(":", 1)
+    else:
+        module_path, _sep, attr_path = dotted_path.rpartition(".")
+    if not module_path or not attr_path:
+        raise ValueError("Expected dotted path to callable: %r" % dotted_path)
+
+    module = importlib.import_module(module_path)
+    obj = module
+    for attr in attr_path.split("."):
+        obj = getattr(obj, attr)
+    if not callable(obj):
+        raise TypeError("Resolved object is not callable: %r" % dotted_path)
+    return obj
+
+
+def _resolve_callable_from_python_file(path_str, func_name="pyline_cmd"):
+    import importlib.util
+
+    module_path = os.path.abspath(path_str)
+    module_name = "pyline_cmd_%s" % (abs(hash((module_path, func_name))),)
+    spec = importlib.util.spec_from_file_location(module_name, module_path)
+    if spec is None or spec.loader is None:
+        raise ValueError("Unable to load Python file: %r" % module_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    func = getattr(module, func_name)
+    if not callable(func):
+        raise TypeError("Resolved object is not callable: %r:%s" % (module_path, func_name))
+    return func
+
+
+def resolve_codefunc(cmd_object):
+    """Resolve a command callable from a python file or dotted path.
+
+    Supported formats:
+    - /path/to/file.py              -> expects function ``pyline_cmd``
+    - /path/to/file.py:function     -> uses function name after ``:``
+    - package.module.function
+    - package.module:function
+    """
+    cmd_object = cmd_object.strip()
+    if not cmd_object:
+        raise ValueError("cmd_object must not be empty")
+
+    file_part = cmd_object
+    func_name = "pyline_cmd"
+    if ":" in cmd_object:
+        maybe_path, maybe_func = cmd_object.split(":", 1)
+        if os.path.isfile(maybe_path):
+            file_part = maybe_path
+            func_name = maybe_func or func_name
+            return _resolve_callable_from_python_file(file_part, func_name=func_name)
+    if os.path.isfile(cmd_object):
+        return _resolve_callable_from_python_file(cmd_object, func_name=func_name)
+    return _resolve_callable_from_dotted_path(cmd_object)
+
+
+def invoke_codefunc(func, ctxt):
+    """Call a command callable using context-aware argument binding."""
+    try:
+        signature = inspect.signature(func)
+    except (TypeError, ValueError):
+        return func(ctxt)
+
+    params = list(signature.parameters.values())
+    if not params:
+        return func()
+    if any(p.kind == inspect.Parameter.VAR_KEYWORD for p in params):
+        return func(**ctxt)
+    if any(p.kind == inspect.Parameter.VAR_POSITIONAL for p in params):
+        return func(ctxt)
+    if len(params) == 1:
+        param = params[0]
+        if param.name in ctxt:
+            return func(ctxt[param.name])
+        return func(ctxt)
+
+    args = []
+    kwargs = {}
+    empty = inspect._empty
+    for param in params:
+        if param.kind == inspect.Parameter.KEYWORD_ONLY:
+            if param.name in ctxt:
+                kwargs[param.name] = ctxt[param.name]
+            elif param.default is empty:
+                raise TypeError("Missing required keyword-only parameter: %s" % param.name)
+            continue
+
+        if param.name in ctxt:
+            args.append(ctxt[param.name])
+        elif param.default is empty:
+            raise TypeError("Missing required parameter: %s" % param.name)
+    return func(*args, **kwargs)
+
+
 def pyline(
     iterable,
     cmd: Optional[str] = None,
@@ -328,11 +465,11 @@ def pyline(
     if cmd == "":
         raise ValueError("cmd must not be empty")
 
-    codeobj = None
+    command_executor = None
     if cmd:
         try:
             log.info(("cmd", cmd))
-            codeobj = compile(cmd, "command", "eval")
+            command_executor = _build_command_executor(cmd)
         except Exception as e:
             e.__dict__["cmd"] = cmd
             log.error(e.__dict__)
@@ -393,9 +530,8 @@ def pyline(
                 log.exception(e)
                 pass
         try:
-            if codeobj:
-                # Note: eval
-                result = eval(codeobj, global_ctxt, locals())  # ...
+            if command_executor:
+                result = command_executor(global_ctxt, locals())
             elif codefunc:
                 ctxt = global_ctxt.copy()
                 ctxt.update(locals())
@@ -1179,6 +1315,17 @@ def get_option_parser():
     )
 
     prs.add_option(
+        "-C",
+        "--cmd-object",
+        dest="cmd_object",
+        action="store",
+        help=(
+            "Command callable source: '/path/to/file.py[:func]' "
+            "or 'package.module.function'"
+        ),
+    )
+
+    prs.add_option(
         "-i",
         "--ipython",
         dest="start_ipython",
@@ -1340,6 +1487,15 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
             else:
                 cmd = "obj"
         opts["cmd"] = cmd.strip()
+
+    if opts.get("cmd_object"):
+        resolved = resolve_codefunc(opts["cmd_object"])
+
+        def _codefunc_wrapper(ctxt, _resolved=resolved):
+            return invoke_codefunc(_resolved, ctxt)
+
+        opts["codefunc"] = _codefunc_wrapper
+        opts["cmd"] = None
 
     log.info(("cmd", opts["cmd"]))
     # opts['attrs'] = PylineResult._fields # XX

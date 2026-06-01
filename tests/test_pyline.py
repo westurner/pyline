@@ -1151,6 +1151,157 @@ class TestCoverageTargets(unittest.TestCase):
         ret_skip, _ = pyline.main(args=['None'], iterable=['x\n'], output=io.StringIO())
         self.assertEqual(0, ret_skip)
 
+    def test_multiline_and_semicolon_commands(self):
+        semicolon = list(pyline.pyline(['abc\n'], cmd='x=line.strip(); x.upper()'))
+        self.assertEqual('ABC', semicolon[0].result)
+
+        multiline_cmd = '\n'.join([
+            'parts = line.strip().split()',
+            'result = "-".join(parts)',
+        ])
+        multiline = list(pyline.pyline(['a b\n'], cmd=multiline_cmd))
+        self.assertEqual('a-b', multiline[0].result)
+
+        multiline_with_trailing_expr = '\n'.join([
+            'parts = line.strip().split()',
+            '"|".join(parts)',
+        ])
+        multiline_expr = list(pyline.pyline(['a b\n'], cmd=multiline_with_trailing_expr))
+        self.assertEqual('a|b', multiline_expr[0].result)
+
+    def test_cmd_object_dotted_path(self):
+        ret, results = pyline.main(
+            args=['--cmd-object', 'tests.test_pyline._dotted_pyline_cmd'],
+            iterable=['abc\n'],
+            output=io.StringIO(),
+            results=[],
+        )
+        self.assertEqual(0, ret)
+        self.assertEqual('ABC', results[0].result)
+
+    def test_cmd_object_python_file(self):
+        fd, cmd_path = tempfile.mkstemp(suffix='.py', text=True)
+        os.close(fd)
+        try:
+            with open(cmd_path, 'w', encoding='utf8') as fh:
+                fh.write('def pyline_cmd(line):\n')
+                fh.write('    return line.strip()[::-1]\n')
+
+            out = io.StringIO()
+            ret, results = pyline.main(
+                args=['--cmd-object', cmd_path],
+                iterable=['abc\n'],
+                output=out,
+                results=[],
+            )
+            self.assertEqual(0, ret)
+            self.assertEqual('cba', results[0].result)
+
+            ret2, results2 = pyline.main(
+                args=['--cmd-object', '{}:pyline_cmd'.format(cmd_path)],
+                iterable=['xyz\n'],
+                output=io.StringIO(),
+                results=[],
+            )
+            self.assertEqual(0, ret2)
+            self.assertEqual('zyx', results2[0].result)
+        finally:
+            os.remove(cmd_path)
+
+    def test_cmd_object_resolution_errors_and_invoke_paths(self):
+        with self.assertRaises(ValueError):
+            pyline.resolve_codefunc('')
+
+        with self.assertRaises(ValueError):
+            pyline.resolve_codefunc('not_a_dotted_path')
+
+        with self.assertRaises(TypeError):
+            pyline.resolve_codefunc('pyline.pyline.__version__')
+
+        def fn0():
+            return 'zero'
+
+        def fn1(line):
+            return line.strip()
+
+        def fn_kwargs(**kwargs):
+            return kwargs['line'].strip().upper()
+
+        def fn_pos_and_kw(line, *, i):
+            return '{}:{}'.format(line.strip(), i)
+
+        self.assertEqual('zero', pyline.invoke_codefunc(fn0, {'line': 'x\n'}))
+        self.assertEqual('x', pyline.invoke_codefunc(fn1, {'line': 'x\n'}))
+        self.assertEqual('X', pyline.invoke_codefunc(fn_kwargs, {'line': 'x\n'}))
+        self.assertEqual('x:2', pyline.invoke_codefunc(fn_pos_and_kw, {'line': 'x\n', 'i': 2}))
+
+        with self.assertRaises(TypeError):
+            pyline.invoke_codefunc(fn_pos_and_kw, {'line': 'x\n'})
+
+    def test_helper_branch_coverage_for_cmd_object(self):
+        # Colon-based dotted path support.
+        func_colon = pyline.resolve_codefunc('tests.test_pyline:_dotted_pyline_cmd')
+        self.assertEqual('Y', func_colon('y\n'))
+
+        fd, noncallable_path = tempfile.mkstemp(suffix='.py', text=True)
+        os.close(fd)
+        try:
+            with open(noncallable_path, 'w', encoding='utf8') as fh:
+                fh.write('pyline_cmd = 1\n')
+            with self.assertRaises(TypeError):
+                pyline.resolve_codefunc(noncallable_path)
+        finally:
+            os.remove(noncallable_path)
+
+        with mock.patch('importlib.util.spec_from_file_location', return_value=None):
+            with self.assertRaises(ValueError):
+                pyline._resolve_callable_from_python_file('missing.py')
+
+        class SigErrorCallable(object):
+            def __call__(self, ctxt):
+                return ctxt['line'].strip()
+
+        with mock.patch.object(pyline.inspect, 'signature', side_effect=ValueError('boom')):
+            self.assertEqual('x', pyline.invoke_codefunc(SigErrorCallable(), {'line': 'x\n'}))
+
+        def fn_varargs(*args):
+            return args[0]['line'].strip()
+
+        self.assertEqual('x', pyline.invoke_codefunc(fn_varargs, {'line': 'x\n'}))
+
+        def fn_single_ctx_name(other):
+            return other['line'].strip()
+
+        self.assertEqual('x', pyline.invoke_codefunc(fn_single_ctx_name, {'line': 'x\n'}))
+
+        def fn_missing_positional(line, missing):
+            return line, missing
+
+        with self.assertRaises(TypeError):
+            pyline.invoke_codefunc(fn_missing_positional, {'line': 'x\n'})
+
+        def fn_kw_loop(line, *, i, z=1):
+            return '{}:{}:{}'.format(line.strip(), i, z)
+
+        self.assertEqual('x:2:1', pyline.invoke_codefunc(fn_kw_loop, {'line': 'x\n', 'i': 2}))
+
+        def fn_positional_defaults(a='A', b='B'):
+            return '{}{}'.format(a, b)
+
+        self.assertEqual('AB', pyline.invoke_codefunc(fn_positional_defaults, {}))
+
+        def fn_two_keyword_only(line, *, i=1, j=2):
+            return '{}:{}:{}'.format(line.strip(), i, j)
+
+        self.assertEqual(
+            'x:1:2',
+            pyline.invoke_codefunc(fn_two_keyword_only, {'line': 'x\n'})
+        )
+
+
+def _dotted_pyline_cmd(line):
+    return line.strip().upper()
+
 
 if __name__ == '__main__':
     unittest.main()
