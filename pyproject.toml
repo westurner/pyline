@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyline"
+version = "0.3.21"
+description = "Pyline is a grep-like, sed-like, awk-like command-line tool for line-based text processing in Python."
+readme = "README.rst"
+license = { file = "LICENSE" }
+authors = [
+  { name = "Wes Turner", email = "wes@wrd.nu" }
+]
+keywords = ["pyline", "sed", "grep"]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: BSD License",
+  "Natural Language :: English",
+  "Programming Language :: Python :: 2",
+  "Programming Language :: Python :: 2.7",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+  "pathlib",
+  "path.py",
+  "jinja2",
+]
+
+[project.urls]
+Homepage = "https://github.com/westurner/pyline"
+Download = "https://github.com/westurner/pyline/releases"
+
+[project.optional-dependencies]
+all = [
+  "path.py",
+  "jinja2",
+]
+test = [
+  "pytest-cov",
+  "pytest-subtests",
+]
+
+[project.scripts]
+pyline = "pyline.pyline:main_entrypoint"
+
+[tool.setuptools]
+packages = ["pyline"]
+
+[tool.pytest.ini_options]
+addopts = "-v --junitxml=pytest-results.xml --cov=pyline --cov-report=xml:cov.xml --cov-report=term-missing"
+testpaths = ["tests"]
