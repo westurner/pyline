@@ -679,11 +679,13 @@ class TestPylineJinja(unittest.TestCase):
 class TestCoverageTargets(unittest.TestCase):
     def test_pyline_result_branches(self):
         none_result = pyline.PylineResult(n=1, result=None)
-        self.assertIsNone(none_result.__str__())
+        self.assertEqual(None, none_result.result)
+        self.assertEqual(None, none_result.__str__())
         self.assertEqual([1, None], list(none_result._numbered()))
 
         false_result = pyline.PylineResult(n=2, result=False)
-        self.assertFalse(false_result.__str__())
+        self.assertEqual(False, false_result.result)
+        self.assertEqual(False, false_result.__str__())
         self.assertEqual([2, False], list(false_result._numbered()))
 
         dict_result = pyline.PylineResult(n=3, result=collections.OrderedDict((('a', 1), ('b', 2))))
@@ -715,7 +717,7 @@ class TestCoverageTargets(unittest.TestCase):
             self.assertEqual(str, cols[1][1])
 
     def test_sort_by_error_paths(self):
-        with self.assertRaises(AttributeError):
+        with self.assertRaises(ValueError):
             list(pyline.sort_by(
                 [pyline.PylineResult(n=0, result=['x'])],
                 sortstr='0',
@@ -814,14 +816,14 @@ class TestCoverageTargets(unittest.TestCase):
             os.remove(path)
 
     def test_pyline_additional_internal_branches(self):
-        real_import = __import__
+        real_import_module = importlib.import_module
 
-        def _import(name, *args, **kwargs):
+        def _import_module(name, *args, **kwargs):
             if name == 'path':
                 raise ImportError('forced for coverage test')
-            return real_import(name, *args, **kwargs)
+            return real_import_module(name, *args, **kwargs)
 
-        with mock.patch('builtins.__import__', side_effect=_import):
+        with mock.patch('importlib.import_module', side_effect=_import_module):
             with self.assertRaises(ImportError):
                 list(pyline.pyline(['x\n'], cmd='line', path_tools_pathpy=True))
 
@@ -885,6 +887,116 @@ class TestCoverageTargets(unittest.TestCase):
             if os.path.exists(out_path):
                 os.remove(out_path)
 
+    def test_additional_branch_coverage_targets(self):
+        # Cover cmd construction with bytes regex and json '<' branch.
+        ret_rgx, _ = pyline.main(
+            opts={
+                'regex': b'(?P<line>.*<.*)',
+                '_output_format': 'json',
+                'file': '-',
+                'output': '-',
+            },
+            iterable=['<x>\n'],
+            output=io.StringIO(),
+        )
+        self.assertEqual(0, ret_rgx)
+
+        # Cover iterable read0 paths: file-like .read, bytes, and join(iterable).
+        out_read = io.StringIO()
+        ret_read, _ = pyline.main(
+            opts={'cmd': 'line', 'read0': True, '_output_format': 'txt', 'output': '-'},
+            iterable=io.StringIO('a\0b\0'),
+            output=out_read,
+        )
+        self.assertEqual(0, ret_read)
+        self.assertEqual(['a', 'b'], out_read.getvalue().splitlines())
+
+        out_bytes = io.StringIO()
+        ret_bytes, _ = pyline.main(
+            opts={'cmd': 'line', 'read0': True, '_output_format': 'txt', 'output': '-'},
+            iterable=b'c\0d\0',
+            output=out_bytes,
+        )
+        self.assertEqual(0, ret_bytes)
+        self.assertEqual(['c', 'd'], out_bytes.getvalue().splitlines())
+
+        out_join = io.StringIO()
+        ret_join, _ = pyline.main(
+            opts={'cmd': 'line', 'read0': True, '_output_format': 'txt', 'output': '-'},
+            iterable=['e\0', 'f\0'],
+            output=out_join,
+        )
+        self.assertEqual(0, ret_join)
+        self.assertEqual(['e', 'f'], out_join.getvalue().splitlines())
+
+        out_bytes_no_trailing = io.StringIO()
+        ret_bytes_no_trailing, _ = pyline.main(
+            opts={'cmd': 'line', 'read0': True, '_output_format': 'txt', 'output': '-'},
+            iterable=b'g\0h',
+            output=out_bytes_no_trailing,
+        )
+        self.assertEqual(0, ret_bytes_no_trailing)
+        self.assertEqual(['g', 'h'], out_bytes_no_trailing.getvalue().splitlines())
+
+        out_str_no_trailing = io.StringIO()
+        ret_str_no_trailing, _ = pyline.main(
+            opts={'cmd': 'line', 'read0': True, '_output_format': 'txt', 'output': '-'},
+            iterable='i\0j',
+            output=out_str_no_trailing,
+        )
+        self.assertEqual(0, ret_str_no_trailing)
+        self.assertEqual(['i', 'j'], out_str_no_trailing.getvalue().splitlines())
+
+        class StdinWithBuffer(object):
+            def __init__(self, data):
+                self.buffer = io.BytesIO(data)
+
+        with mock.patch.object(sys, 'stdin', StdinWithBuffer(b'k\0l')):
+            out_stdin_read0 = io.StringIO()
+            ret_stdin_read0, _ = pyline.main(
+                opts={'cmd': 'line', 'read0': True, 'file': '-', '_output_format': 'txt', 'output': '-'},
+                iterable=None,
+                output=out_stdin_read0,
+            )
+        self.assertEqual(0, ret_stdin_read0)
+        self.assertEqual(['k', 'l'], out_stdin_read0.getvalue().splitlines())
+
+        # Cover parser default type function branch for unknown col type.
+        cols_unknown = list(pyline.parse_colspecstr('0::unknown'))
+        self.assertEqual('0', cols_unknown[0][0])
+        self.assertIs(cols_unknown[0][1], pyline.unicode)
+
+        # Cover pyline branch where neither codeobj nor codefunc run in-loop.
+        out_none = list(pyline.pyline(['x\n'], cmd=0))
+        self.assertIsNone(out_none[0].result)
+
+        # Cover finally paths: fileno in stdio and fileno raising exception.
+        class StdoutLike(io.StringIO):
+            def fileno(self):
+                return 1
+
+        stdio_like = StdoutLike()
+        ret_stdio, _ = pyline.main(
+            opts={'cmd': 'line'},
+            iterable=stdio_like,
+            output=io.StringIO(),
+        )
+        self.assertEqual(0, ret_stdio)
+        self.assertFalse(stdio_like.closed)
+
+        class RaiseFileno(io.StringIO):
+            def fileno(self):
+                raise OSError('no fileno')
+
+        raise_fileno = RaiseFileno('z\n')
+        ret_raise, _ = pyline.main(
+            opts={'cmd': 'line'},
+            iterable=raise_fileno,
+            output=io.StringIO(),
+        )
+        self.assertEqual(0, ret_raise)
+        self.assertTrue(raise_fileno.closed)
+
     def test_main_entrypoint_in_pyline_module(self):
         with mock.patch.object(pyline, 'main', return_value=(0, [])):
             with mock.patch.object(sys, 'argv', ['pyline']):
@@ -928,7 +1040,7 @@ class TestCoverageTargets(unittest.TestCase):
         join_cmd = list(pyline.pyline(['x\n'], cmd='j([1,2])'))
         self.assertEqual('1\t2', join_cmd[0].result)
 
-        with self.assertRaises(UnboundLocalError):
+        with self.assertRaises(ValueError):
             list(pyline.pyline(['x\n'], cmd=''))
 
         class BrokenLine(str):
@@ -939,12 +1051,13 @@ class TestCoverageTargets(unittest.TestCase):
         broken_path = list(pyline.pyline([broken], cmd='line', path_tools_pathlib=True))
         self.assertEqual('abc\n', broken_path[0].result)
 
-        self.assertEqual([2], pyline.OrderedDict_({1: 2}).values())
+        self.assertEqual([2], list(pyline.OrderedDict_({1: 2}).values()))
 
         self.assertEqual([], list(pyline.parse_colspecstr('')))
         with mock.patch('pdb.set_trace', return_value=None):
-            with self.assertRaises(UnboundLocalError):
-                list(pyline.parse_colspecstr('0'))
+            cols0 = list(pyline.parse_colspecstr('0'))
+        self.assertEqual('0', cols0[0][0])
+        self.assertIs(cols0[0][1], pyline.unicode)
 
         with mock.patch('pdb.set_trace', return_value=None):
             mapped = pyline.build_column_map('0::int')

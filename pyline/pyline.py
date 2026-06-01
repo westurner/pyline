@@ -149,15 +149,18 @@ Result = namedtuple("Result", ("n", "result"))  # , 'uri', 'meta'))
 
 
 class PylineResult(Result):
-    def __str__(self):
+    def __str__(self) -> str|bool|None:
         result = self.result
+
+        if result is None:
+            return None
+        elif result is False:
+            return False
+
         odelim = "\t"  # TODO
         odelim = unicode(odelim)
 
-        if result is None or result is False:
-            return result
-
-        elif hasattr(self.result, "itervalues") or hasattr(self.result, "values"):
+        if hasattr(self.result, "itervalues") or hasattr(self.result, "values"):
             result = odelim.join(unicode(s) for s in itervalues(self.result))
 
         elif isinstance(self.result, (basestring, unicode)):
@@ -301,7 +304,7 @@ def pyline(
     Path = str
     if path_tools_pathpy:
         try:
-            import path as pathpy
+            pathpy = importlib.import_module("path")
         except ImportError:
             log.error(
                 "`import path` failed. Is path.py installed?\n$ pip install path.py"
@@ -321,6 +324,9 @@ def pyline(
             cmd = "line"
         if path_tools_pathpy or path_tools_pathlib:
             cmd = "p"
+
+    if cmd == "":
+        raise ValueError("cmd must not be empty")
 
     codeobj = None
     if cmd:
@@ -359,16 +365,12 @@ def pyline(
 
     pp = pprint.pformat
 
-    if shlex:
-
-        def splitfunc(line):
-            return _shlex.split(line, posix=True)
-    else:
-
-        def splitfunc(obj):
-            # if hasattr(obj, 'strip'):
-            #    return obj.strip().split(idelim, idelim_split_max)
-            return obj.split(idelim, idelim_split_max)
+    def splitfunc(obj):
+        if shlex:
+            return _shlex.split(obj, posix=True)
+        # if hasattr(obj, 'strip'):
+        #    return obj.strip().split(idelim, idelim_split_max)
+        return obj.split(idelim, idelim_split_max)
 
     endl = "\n"
 
@@ -377,6 +379,7 @@ def pyline(
         l = line = o = obj  # noqa: E741
         w = words = [_w for _w in splitfunc(line)]
         rgx = _rgx and _rgx.match(line) or None
+        result = None
 
         p = path = None
         if path_tools_pathpy or path_tools_pathlib:
@@ -406,11 +409,7 @@ def pyline(
 
 
 class OrderedDict_(collections.OrderedDict):
-    def keys(self):
-        return list(collections.OrderedDict.keys(self))
-
-    def values(self):
-        return list(collections.OrderedDict.values(self))
+    pass
 
 
 # from collections import MutableMapping
@@ -495,6 +494,7 @@ def parse_colspecstr(colspecstr, default=None):
     for n, colspecstr_col_n in enumerate(colspecstr.split(",")):
         colkeystr = None  # '0'
         coltypefunc = default
+        coltypestr = None
         # coltypestr = colspecstr_col_n.strip()
         colspecstrrgx_split = COLSPECSTRRGX.split(colspecstr_col_n, maxsplit=1)
         if len(colspecstrrgx_split) == 2:
@@ -505,8 +505,12 @@ def parse_colspecstr(colspecstr, default=None):
             raise ValueError(colspecstrrgx_split)
 
         colkey = parse_field(colkeystr).strip()
-        coltypestr = parse_field(coltypestr).strip()
-        coltypefunc = typestr_func_map.get(coltypestr, default)
+        if coltypestr is not None:
+            coltypestr = parse_field(coltypestr).strip()
+            if coltypestr in typestr_func_map:
+                coltypefunc = typestr_func_map[coltypestr]
+            else:
+                coltypefunc = default
         # raise Exception((colkey, coltypestr, coltypefunc))
         yield (colkey, coltypefunc)
 
@@ -616,14 +620,8 @@ def sort_by(
                 if type_func:
                     try:
                         retval = type_func(colvalue)
-                    except ValueError as e:
-                        e.msg += "\n" + repr(
-                            (
-                                type_func,
-                                colvalue,
-                                e,
-                            )
-                        )
+                    except ValueError:
+                        log.error(("sort_cast_error", type_func, colvalue))
                         raise
                 else:
                     retval = colvalue
@@ -1334,6 +1332,7 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
                 regex_value = opts.get("regex") or ""
                 if isinstance(regex_value, bytes):
                     regex_value = regex_value.decode("utf8", "ignore")
+                    opts["regex"] = regex_value
                 if opts.get("_output_format") == "json" and "<" in regex_value:  # TODO:
                     cmd = "rgx and rgx.groupdict()"
                 else:
@@ -1373,16 +1372,10 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
             if opts.get("file") == "-":
                 # opts._file = sys.stdin
                 if opts.get("read0"):
-                    if IS_PYTHON2:  # pragma: no cover
-                        raw_data = codecs.getreader("utf8")(sys.stdin).read()
-                    else:
-                        raw_data = getattr(sys.stdin, "buffer", sys.stdin).read()
+                    raw_data = getattr(sys.stdin, "buffer", sys.stdin).read()
                     opts["_file"] = _decode_read0_records(raw_data)
                 else:
-                    if IS_PYTHON2:  # pragma: no cover
-                        opts["_file"] = codecs.getreader("utf8")(sys.stdin)
-                    else:
-                        opts["_file"] = sys.stdin
+                    opts["_file"] = sys.stdin
             else:
                 if opts.get("read0"):
                     with open(opts["file"], "rb") as _file:
@@ -1399,10 +1392,7 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
         else:
             if opts.get("output") == "-":
                 # opts._output = sys.stdout
-                if IS_PYTHON2:  # pragma: no cover
-                    opts["_output"] = codecs.getwriter("utf8")(sys.stdout)
-                else:
-                    opts["_output"] = sys.stdout
+                opts["_output"] = sys.stdout
             elif opts.get("output"):
                 if IS_PYTHON2:  # pragma: no cover
                     opts["_output"] = codecs.open(opts["output"], "w", encoding="utf8")
@@ -1410,10 +1400,7 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
                     opts["_output"] = open(opts["output"], "w", encoding="utf8")
             else:
                 # opts._output = sys.stdout
-                if IS_PYTHON2:  # pragma: no cover
-                    opts["_output"] = codecs.getwriter("utf8")(sys.stdout)
-                else:
-                    opts["_output"] = sys.stdout
+                opts["_output"] = sys.stdout
 
         if opts.get("_output_format") is None:
             # opts._output_format = DEFAULTS['_output_format']
@@ -1459,12 +1446,14 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
 
         writer.footer()
     finally:
-        if getattr(opts.get("_file", codecs.EncodedFile), "fileno", int)() not in (
-            0,
-            1,
-            2,
-        ):
-            opts["_file"].close()
+        _file = opts.get("_file")
+        if _file is not None and hasattr(_file, "close"):
+            try:
+                _fileno = _file.fileno() if hasattr(_file, "fileno") else None
+            except Exception:
+                _fileno = None
+            if _fileno not in (0, 1, 2):
+                _file.close()
 
     # opts
     # results
