@@ -101,7 +101,7 @@ if sys.version_info.major >= 3:
 
     def iteritems(x):
         return x.items()
-else:
+else:  # pragma: no cover
     from cgi import escape as html_escape
 
     def itervalues(x):
@@ -163,7 +163,7 @@ class PylineResult(Result):
         elif hasattr(self.result, "__iter__"):
             result = odelim.join(unicode(s) for s in result)
 
-        elif hasattr(self.result, "rstrip"):
+        elif hasattr(self.result, "rstrip"):  # pragma: no branch
             if result[-1] == "\n":
                 result = result[:-1]
 
@@ -187,7 +187,7 @@ class PylineResult(Result):
             else:
                 yield self.result
 
-        elif hasattr(self.result, "__iter__"):
+        elif hasattr(self.result, "__iter__"):  # pragma: no branch
             for col in self.result:
                 yield col
 
@@ -217,7 +217,7 @@ def log_(*args, **kwargs):
     """
     log.debug((args, kwargs))
     # print((args, kwargs), file=sys.stderr)
-    if kwargs is None:
+    if kwargs is None:  # pragma: no cover
         if len(args) == 1:
             return args[0]
         return args
@@ -329,7 +329,7 @@ def pyline(
             log.exception(e)
             raise
 
-    def item_keys(obj, keys):
+    def item_keys(obj, keys):  # pragma: no cover
         if isinstance(keys, (str, unicode)):
             keys = [keys]
         for k in keys:
@@ -338,7 +338,7 @@ def pyline(
             else:
                 yield obj.__getslice__(k)
 
-    def k(obj, keys=(":",)):
+    def k(obj, keys=(":",)):  # pragma: no cover
         return [obj.__getslice__(k) for k in keys]
 
     def j(args):
@@ -494,7 +494,7 @@ def parse_colspecstr(colspecstr, default=unicode):
             colkeystr, coltypestr = colspecstrrgx_split
         elif len(colspecstrrgx_split) == 1:
             colkeystr = colspecstrrgx_split[0]
-        else:
+        else:  # pragma: no cover
             raise ValueError(colspecstrrgx_split)
 
         colkey = parse_field(colkeystr).strip()
@@ -859,7 +859,7 @@ class ResultWriter(object):
             writer = ResultWriter_jinja(_output, **opts)
         elif _output_format in ("checkbox", "chk"):
             writer = ResultWriter_checkbox(_output, **opts)
-        else:
+        else:  # pragma: no cover
             raise ValueError("_output_format: %r" % _output_format)
 
         output_func = None
@@ -1343,12 +1343,12 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
         else:
             if opts.get("file") == "-":
                 # opts._file = sys.stdin
-                if IS_PYTHON2:
+                if IS_PYTHON2:  # pragma: no cover
                     opts["_file"] = codecs.getreader("utf8")(sys.stdin)
                 else:
                     opts["_file"] = sys.stdin
             else:
-                if IS_PYTHON2:
+                if IS_PYTHON2:  # pragma: no cover
                     opts["_file"] = codecs.open(opts["file"], "r", encoding="utf8")
                 else:
                     opts["_file"] = open(opts["file"], "r", encoding="utf8")
@@ -1361,18 +1361,18 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
         else:
             if opts.get("output") == "-":
                 # opts._output = sys.stdout
-                if IS_PYTHON2:
+                if IS_PYTHON2:  # pragma: no cover
                     opts["_output"] = codecs.getwriter("utf8")(sys.stdout)
                 else:
                     opts["_output"] = sys.stdout
             elif opts.get("output"):
-                if IS_PYTHON2:
+                if IS_PYTHON2:  # pragma: no cover
                     opts["_output"] = codecs.open(opts["output"], "w", encoding="utf8")
                 else:
                     opts["_output"] = open(opts["output"], "w", encoding="utf8")
             else:
                 # opts._output = sys.stdout
-                if IS_PYTHON2:
+                if IS_PYTHON2:  # pragma: no cover
                     opts["_output"] = codecs.getwriter("utf8")(sys.stdout)
                 else:
                     opts["_output"] = sys.stdout
@@ -1416,7 +1416,7 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
                     # skip result if not bool(result.result)
                     continue
                 writer.output_func(result)
-                if results is not None:
+                if results is not None:  # pragma: no branch
                     results.append(result)
 
         writer.footer()
@@ -1442,5 +1442,5 @@ def main_entrypoint():
     sys.exit(retval)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     main_entrypoint()

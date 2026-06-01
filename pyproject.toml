@@ -50,5 +50,5 @@ pyline = "pyline.pyline:main_entrypoint"
 packages = ["pyline"]
 
 [tool.pytest.ini_options]
-addopts = "-v --junitxml=pytest-results.xml --cov=pyline --cov-report=xml:cov.xml --cov-report=term-missing"
+addopts = "-v --junitxml=pytest-results.xml --cov=pyline --cov-branch --cov-report=xml:cov.xml --cov-report=term-missing"
 testpaths = ["tests"]

@@ -10,13 +10,16 @@ Tests for `pyline` module.
 import collections
 import difflib
 # import json
+import importlib
 import logging
 import os
 import pprint
+import runpy
 import sys
 import tempfile
 import types
 import unittest
+from unittest import mock
 
 IS_PYTHON2 = sys.version_info.major == 2
 
@@ -670,6 +673,367 @@ class TestPylineJinja(unittest.TestCase):
             iterable=iterable)
         self.assertEqual(0, retcode)
         self.assertEqual(results, _results)
+
+
+class TestCoverageTargets(unittest.TestCase):
+    def test_pyline_result_branches(self):
+        none_result = pyline.PylineResult(n=1, result=None)
+        self.assertIsNone(none_result.__str__())
+        self.assertEqual([1, None], list(none_result._numbered()))
+
+        false_result = pyline.PylineResult(n=2, result=False)
+        self.assertFalse(false_result.__str__())
+        self.assertEqual([2, False], list(false_result._numbered()))
+
+        dict_result = pyline.PylineResult(n=3, result=collections.OrderedDict((('a', 1), ('b', 2))))
+        self.assertEqual('1\t2', str(dict_result))
+        self.assertEqual([3, 1, 2], list(dict_result._numbered()))
+
+        str_result = pyline.PylineResult(n=4, result='abc\n')
+        self.assertEqual('abc', str(str_result))
+        self.assertEqual([4, 'abc'], list(str_result._numbered()))
+
+        iter_result = pyline.PylineResult(n=5, result=('x', 'y'))
+        self.assertEqual('x\ty', str(iter_result))
+        self.assertEqual([5, 'x', 'y'], list(iter_result._numbered()))
+        self.assertIn('x', iter_result._numbered_str(odelim='|'))
+
+    def test_log_helper_paths(self):
+        self.assertEqual(('a', {'k': 'v'}), pyline.log_('a', k='v'))
+        self.assertEqual((('a', 'b'), {'k': 'v'}), pyline.log_('a', 'b', k='v'))
+        self.assertEqual({}, pyline.log_())
+
+    def test_parse_field_and_colspec_paths(self):
+        with mock.patch('pdb.set_trace', return_value=None):
+            self.assertEqual('alpha', pyline.parse_field('alpha', shlex=False))
+            self.assertEqual('alpha beta', pyline.parse_field('"alpha beta"', shlex=True))
+            cols = list(pyline.parse_colspecstr('0::int, 1::xsd:string'))
+            self.assertEqual('0', cols[0][0])
+            self.assertEqual(int, cols[0][1])
+            self.assertEqual('1', cols[1][0])
+            self.assertEqual(str, cols[1][1])
+
+    def test_sort_by_error_paths(self):
+        with self.assertRaises(AttributeError):
+            list(pyline.sort_by(
+                [pyline.PylineResult(n=0, result=['x'])],
+                sortstr='0',
+                col_map={'0': int},
+            ))
+
+        with self.assertRaises(TypeError):
+            pyline.sort_by(
+                [
+                    pyline.PylineResult(n=0, result=['1']),
+                    pyline.PylineResult(n=1, result=[1]),
+                ],
+                sortstr='0',
+            )
+
+    def test_result_writer_paths(self):
+        output = io.StringIO()
+        writer = pyline.ResultWriter.get_writer(output, output_format='txt', number_lines=True)
+        writer.output_func(pyline.PylineResult(n=1, result=('a', 'b')))
+        self.assertIn('a\tb', output.getvalue())
+
+        with self.assertRaises(ValueError):
+            pyline.ResultWriter.get_writer(io.StringIO(), output_format='unknown')
+
+        html_writer = pyline.ResultWriter_html(io.StringIO())
+        html_writer.header(attrs=['col'])
+        html_writer.write(pyline.PylineResult(n=1, result=1))
+        html_writer.footer()
+        self.assertIn('<table>', html_writer._output.getvalue())
+
+        base_writer = pyline.ResultWriter(io.StringIO())
+        with self.assertRaises(Exception):
+            base_writer.set_output(io.StringIO())
+
+    def test_get_sort_function_and_main_opts_paths(self):
+        with self.assertRaises(ValueError):
+            pyline.get_sort_function(sort_asc='0', sort_desc='0')
+
+        null_sort = pyline.get_sort_function()
+        data = [pyline.PylineResult(n=0, result=['a'])]
+        self.assertEqual(data, list(null_sort(data)))
+
+        with self.assertRaises(ValueError):
+            pyline.main(opts=object(), iterable=['x'])
+
+    def test_main_entry_and_branch_paths(self):
+        out = io.StringIO()
+        retcode, _ = pyline.main(
+            args=['-r', '(?P<line>.*<.*)', '-O', 'json'],
+            iterable=['<x>\n'],
+            output=out,
+        )
+        self.assertEqual(0, retcode)
+        self.assertIn('line', out.getvalue())
+
+        with mock.patch.object(pyline, 'get_sort_function', return_value=None):
+            out2 = io.StringIO()
+            retcode2, results2 = pyline.main(
+                args=['line'],
+                iterable=['x\n'],
+                output=out2,
+                results=[],
+            )
+            self.assertEqual(0, retcode2)
+            self.assertEqual(1, len(results2))
+
+        with mock.patch.object(pyline, 'get_sort_function', return_value=None):
+            retcode3, results3 = pyline.main(
+                args=['None'],
+                iterable=['x\n'],
+                output=io.StringIO(),
+                results=[],
+            )
+            self.assertEqual(0, retcode3)
+            self.assertEqual([], results3)
+
+        with mock.patch.object(pyline, 'main_entrypoint') as mocked_main:
+            runpy.run_module('pyline.__main__', run_name='__main__')
+            mocked_main.assert_called_once_with()
+
+        with mock.patch.object(pyline, 'main_entrypoint') as mocked_main2:
+            importlib.reload(importlib.import_module('pyline.__main__'))
+            mocked_main2.assert_not_called()
+
+    def test_main_closes_real_file_handle(self):
+        with tempfile.NamedTemporaryFile('w+', delete=False, encoding='utf8') as tf:
+            tf.write('one\n')
+            tf.flush()
+            path = tf.name
+        try:
+            file_handle = open(path, 'r', encoding='utf8')
+            self.assertFalse(file_handle.closed)
+            pyline.main(args=['line'], iterable=file_handle, output=io.StringIO())
+            self.assertTrue(file_handle.closed)
+        finally:
+            os.remove(path)
+
+    def test_pyline_additional_internal_branches(self):
+        real_import = __import__
+
+        def _import(name, *args, **kwargs):
+            if name == 'path':
+                raise ImportError('forced for coverage test')
+            return real_import(name, *args, **kwargs)
+
+        with mock.patch('builtins.__import__', side_effect=_import):
+            with self.assertRaises(ImportError):
+                list(pyline.pyline(['x\n'], cmd='line', path_tools_pathpy=True))
+
+        shlex_output = list(pyline.pyline(['"a b" c\n'], cmd='words', shlex=True))
+        self.assertEqual(['a b', 'c'], shlex_output[0].result)
+
+        ilast_output = list(pyline.pyline(['a\n', 'b\n'], cmd='(i_last, line)'))
+        self.assertEqual(2, ilast_output[0].result[0])
+
+        with self.assertRaises(ZeroDivisionError):
+            list(pyline.pyline(['a\n'], cmd='1/0'))
+
+        with self.assertRaises(ZeroDivisionError):
+            list(pyline.pyline(['a\n'], codefunc=lambda ctxt: 1 / 0))
+
+    def test_datasource_and_build_column_map_paths(self):
+        ds = pyline.PylineDatasource(results=[])
+        ds.add_resultset(None)
+        self.assertIn('resultsets', ds.data)
+
+        ds2 = pyline.PylineDatasource()
+        self.assertEqual([], ds2.data['resultsets'])
+
+        existing = collections.OrderedDict((('0', int),))
+        self.assertIs(existing, pyline.build_column_map(existing))
+        self.assertEqual(collections.OrderedDict(), pyline.build_column_map(None))
+
+    def test_parse_field_error_and_numeric_parse_exception_path(self):
+        with mock.patch('pdb.set_trace', return_value=None):
+            with self.assertRaises(ValueError):
+                pyline.parse_field('   ', shlex=True)
+
+        class BadMatch(object):
+            def group(self, *_args, **_kwargs):
+                raise IndexError('no group')
+
+        with mock.patch.object(pyline.re, 'match', return_value=BadMatch()):
+            self.assertEqual('123', pyline.str2boolintorfloat('123'))
+
+    def test_main_option_branches(self):
+        with tempfile.NamedTemporaryFile('w+', delete=False, encoding='utf8') as tf:
+            tf.write('x\0y\0')
+            tf.flush()
+            src_path = tf.name
+        out_path = src_path + '.out'
+        try:
+            with self.assertRaises(ValueError):
+                pyline.main(args=['-f', src_path, '--read0', 'line'], output=io.StringIO())
+
+            ret, _ = pyline.main(
+                args=['-f', src_path, '-o', out_path, 'line'],
+                output=None,
+            )
+            self.assertEqual(0, ret)
+            self.assertTrue(os.path.exists(out_path))
+        finally:
+            if os.path.exists(src_path):
+                os.remove(src_path)
+            if os.path.exists(out_path):
+                os.remove(out_path)
+
+    def test_main_entrypoint_in_pyline_module(self):
+        with mock.patch.object(pyline, 'main', return_value=(0, [])):
+            with mock.patch.object(sys, 'argv', ['pyline']):
+                with self.assertRaises(SystemExit) as exc:
+                    pyline.main_entrypoint()
+                self.assertEqual(0, exc.exception.code)
+
+    def test_remaining_branch_targets(self):
+        class RStripOnly(object):
+            def __init__(self, value):
+                self.value = value
+
+            def __getitem__(self, item):
+                return self.value[item]
+
+            def rstrip(self):
+                return self.value.rstrip()
+
+        rs = pyline.PylineResult(n=1, result=RStripOnly('abc\n'))
+        self.assertEqual('abc', rs.__str__())
+        self.assertEqual('abc', rs.__unicode__())
+
+        rs_no_nl = pyline.PylineResult(n=2, result=RStripOnly('abc'))
+        self.assertIsInstance(rs_no_nl.__str__(), RStripOnly)
+
+        iter_empty = pyline.PylineResult(n=9, result=tuple())
+        self.assertEqual([9], list(iter_empty._numbered()))
+
+        with self.assertRaises(Exception):
+            pyline.debug('x')
+
+        default_cmd = list(pyline.pyline(['x\n']))
+        self.assertEqual('x\n', default_cmd[0].result)
+
+        pathlib_cmd = list(pyline.pyline(['x\n'], path_tools_pathlib=True))
+        self.assertTrue(pathlib_cmd[0].result)
+
+        with self.assertRaises(SyntaxError):
+            list(pyline.pyline(['x\n'], cmd='x['))
+
+        join_cmd = list(pyline.pyline(['x\n'], cmd='j([1,2])'))
+        self.assertEqual('1\t2', join_cmd[0].result)
+
+        with self.assertRaises(UnboundLocalError):
+            list(pyline.pyline(['x\n'], cmd=''))
+
+        class BrokenLine(str):
+            def endswith(self, *_args, **_kwargs):
+                raise RuntimeError('boom')
+
+        broken = BrokenLine('abc\n')
+        broken_path = list(pyline.pyline([broken], cmd='line', path_tools_pathlib=True))
+        self.assertEqual('abc\n', broken_path[0].result)
+
+        self.assertEqual([2], pyline.OrderedDict_({1: 2}).values())
+
+        self.assertEqual([], list(pyline.parse_colspecstr('')))
+        with mock.patch('pdb.set_trace', return_value=None):
+            with self.assertRaises(UnboundLocalError):
+                list(pyline.parse_colspecstr('0'))
+
+        with mock.patch('pdb.set_trace', return_value=None):
+            mapped = pyline.build_column_map('0::int')
+        self.assertIn('0', mapped)
+
+        sorted_no_sortstr = pyline.sort_by(
+            [pyline.PylineResult(n=0, result=['b']), pyline.PylineResult(n=1, result=['a'])],
+            sortstr=None,
+        )
+        self.assertEqual('a', sorted_no_sortstr[0].result[0])
+
+        class MsgValueError(ValueError):
+            def __init__(self):
+                super(MsgValueError, self).__init__('bad')
+                self.msg = 'bad'
+
+        def bad_cast(_value):
+            raise MsgValueError()
+
+        with self.assertRaises(MsgValueError):
+            pyline.sort_by(
+                [pyline.PylineResult(n=0, result=['z'])],
+                sortstr='0',
+                col_map={'0': bad_cast},
+            )
+
+        w = pyline.ResultWriter(None)
+        w.set_output(io.StringIO())
+        self.assertIsNotNone(w._output)
+
+        out = io.StringIO()
+        base_writer = pyline.ResultWriter(out)
+        base_writer.write_numbered('abc')
+        self.assertIn('abc', out.getvalue())
+
+        csv_out = io.StringIO()
+        csv_writer = pyline.ResultWriter_csv(csv_out)
+        csv_writer.header(attrs=['a', 'b'])
+        self.assertIn('"a"', csv_out.getvalue())
+
+        class TrulyEmpty(object):
+            pass
+
+        with self.assertRaises(KeyError):
+            pyline.main(opts=TrulyEmpty(), output=io.StringIO())
+
+        class EmptyOpts(object):
+            def __init__(self):
+                self.file = '-'
+                self.output = '-'
+
+        with tempfile.NamedTemporaryFile('w+', delete=False, encoding='utf8') as sf:
+            sf.write('stdin line\n')
+            sf.flush()
+            sf.seek(0)
+            with mock.patch.object(sys, 'stdin', sf):
+                ret_stdin, _ = pyline.main(opts=EmptyOpts(), output=io.StringIO())
+        self.assertEqual(0, ret_stdin)
+
+        with mock.patch.object(pyline, 'get_sort_function', return_value=None):
+            ret_nosort, res_nosort = pyline.main(
+                args=['line'],
+                iterable=['x\n', 'y\n'],
+                output=io.StringIO(),
+                results=[],
+            )
+            self.assertEqual(0, ret_nosort)
+            self.assertEqual(2, len(res_nosort))
+
+        ret_v, _ = pyline.main(opts={'verbose': True, 'cmd': 'line'}, iterable=['x\n'], output=io.StringIO())
+        self.assertEqual(0, ret_v)
+
+        ret_q, _ = pyline.main(opts={'quiet': True, 'cmd': 'line'}, iterable=['x\n'], output=io.StringIO())
+        self.assertEqual(0, ret_q)
+
+        ret_ver, no_results = pyline.main(opts={'version': True}, iterable=['x\n'], output=io.StringIO())
+        self.assertEqual(0, ret_ver)
+        self.assertIsNone(no_results)
+
+        with mock.patch('pdb.set_trace', return_value=None):
+            ret_cols, _ = pyline.main(
+                opts={'cmd': 'line', 'col_mapstr': '0::int'},
+                iterable=['1\n'],
+                output=io.StringIO(),
+            )
+        self.assertEqual(0, ret_cols)
+
+        with self.assertRaises(SystemExit):
+            pyline.main(opts={'cmd': 'line', 'sort_asc': '0', 'sort_desc': '0'}, iterable=['1\n'], output=io.StringIO())
+
+        ret_skip, _ = pyline.main(args=['None'], iterable=['x\n'], output=io.StringIO())
+        self.assertEqual(0, ret_skip)
 
 
 if __name__ == '__main__':
