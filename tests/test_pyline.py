@@ -434,7 +434,7 @@ class TestPylineMain(LoggingTestCase, unittest.TestCase):
              'os.path.isfile(line) and (os.stat(line).st_size, line)'),
             #
             ("-p", "p and p.is_file() and (p.size, p, p.stat())"),
-            ("--pathlib", "p and p.is_file() and (os.path.getsize(p), p, os.path.stat(p))")
+            ("--pathlib", "p and p.is_file() and (os.path.getsize(p), p, os.stat(p))")
         )
 
         TEST_ARGS = ('-f', self.TEST_FILE)
