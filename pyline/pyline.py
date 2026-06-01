@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from __future__ import print_function
 """
 
 **pyline**
@@ -70,8 +69,9 @@ Shell::
         pyline.py   # -> ${__DOTFILES}/scripts/pyline.py
 
 """
+from __future__ import print_function
 
-__version__ = '0.3.21'
+__version__ = "0.3.21"
 
 import csv
 import collections
@@ -110,6 +110,7 @@ else:
     def iteritems(x):
         return x.iteritems()
 
+
 EPILOG = __doc__  # """  """
 
 REGEX_DOC = r"""
@@ -123,17 +124,16 @@ S  DOTALL      "." matches any character at all, including the newline.
 X  VERBOSE     Ignore whitespace and comments for nicer looking RE's.
 U  UNICODE     Make \w, \W, \b, \B, dependent on the Unicode locale."""
 REGEX_OPTIONS = dict(
-    (line[0],
-        (line[1:14].strip(), line[15:]))
-    for line in REGEX_DOC.split('\n') if line)
+    (line[0], (line[1:14].strip(), line[15:])) for line in REGEX_DOC.split("\n") if line
+)
 
 STANDARD_REGEXES = {}
 
-DEFAULT_LOGGER='pyline'
+DEFAULT_LOGGER = "pyline"
 log = logging.getLogger(DEFAULT_LOGGER)
 hdlr = logging.StreamHandler(stream=sys.stderr)
 # fmt = logging.Formatter(logging.BASIC_FORMAT)
-fmt = logging.Formatter('%(levelname)-5s %(name)s:%(lineno)5s: %(message)s')
+fmt = logging.Formatter("%(levelname)-5s %(name)s:%(lineno)5s: %(message)s")
 hdlr.setFormatter(fmt)
 log.addHandler(hdlr)
 # log.setLevel(logging.DEBUG)
@@ -141,31 +141,30 @@ log.addHandler(hdlr)
 log.setLevel(logging.WARN)
 
 
-Result = namedtuple('Result', ('n', 'result')) # , 'uri', 'meta'))
+Result = namedtuple("Result", ("n", "result"))  # , 'uri', 'meta'))
 
 
 class PylineResult(Result):
-
     def __str__(self):
         result = self.result
-        odelim = u'\t'  # TODO
+        odelim = "\t"  # TODO
         odelim = unicode(odelim)
 
         if result is None or result is False:
             return result
 
-        elif hasattr(self.result, 'itervalues') or hasattr(self.result, 'values'):
+        elif hasattr(self.result, "itervalues") or hasattr(self.result, "values"):
             result = odelim.join(unicode(s) for s in itervalues(self.result))
 
         elif isinstance(self.result, (basestring, unicode)):
-            if result[-1] == '\n':   # TODO: remove_one_trailing_cr
+            if result[-1] == "\n":  # TODO: remove_one_trailing_cr
                 result = result[:-1]
 
-        elif hasattr(self.result, '__iter__'):
+        elif hasattr(self.result, "__iter__"):
             result = odelim.join(unicode(s) for s in result)
 
-        elif hasattr(self.result, 'rstrip'):
-            if result[-1] == '\n':
+        elif hasattr(self.result, "rstrip"):
+            if result[-1] == "\n":
                 result = result[:-1]
 
         return result
@@ -178,30 +177,33 @@ class PylineResult(Result):
         if self.result is None or self.result is False:
             yield self.result
 
-        elif hasattr(self.result, 'itervalues') or hasattr(self.result, 'values'):
+        elif hasattr(self.result, "itervalues") or hasattr(self.result, "values"):
             for col in itervalues(self.result):
                 yield col
 
-        elif hasattr(self.result, 'rstrip'):
-            if self.result[-1] == '\n':   # TODO: remove_one_trailing_cr
+        elif hasattr(self.result, "rstrip"):
+            if self.result[-1] == "\n":  # TODO: remove_one_trailing_cr
                 yield self.result[:-1]
             else:
                 yield self.result
 
-        elif hasattr(self.result, '__iter__'):
+        elif hasattr(self.result, "__iter__"):
             for col in self.result:
                 yield col
 
     def _numbered_str(self, odelim):
         record = self._numbered()
-        return ' %4d%s%s' % (
+        return " %4d%s%s" % (
             next(record),
             odelim,
-            unicode(odelim).join(str(x) for x in record))
+            unicode(odelim).join(str(x) for x in record),
+        )
+
 
 def debug(*args, **kwargs):
     log_(*args, **kwargs)
     raise Exception(args, kwargs)
+
 
 def log_(*args, **kwargs):
     """log through to stderr and return what is passed in
@@ -214,7 +216,7 @@ def log_(*args, **kwargs):
         log(value1, value2) -> [value1, value2]
     """
     log.debug((args, kwargs))
-    #print((args, kwargs), file=sys.stderr)
+    # print((args, kwargs), file=sys.stderr)
     if kwargs is None:
         if len(args) == 1:
             return args[0]
@@ -227,23 +229,26 @@ def log_(*args, **kwargs):
         else:
             return kwargs
 
-def pyline(iterable,
-           cmd: Optional[str] = None,
-           codefunc=None,
-           col_map: Optional[str] = None,
-           uri: Optional[str] = None,
-           meta: Optional[str] = None,
-           modules: Optional[list[str]] = None,
-           regex: Optional[str] = None,
-           regex_options=None,
-           path_tools_pathpy: bool = False,
-           path_tools_pathlib: bool = False,
-           shlex: bool = None,
-           read0: bool = False,
-           idelim: str = None,
-           idelim_split_max: int = -1,
-           odelim: str = "\t",
-           **kwargs):
+
+def pyline(
+    iterable,
+    cmd: Optional[str] = None,
+    codefunc=None,
+    col_map: Optional[str] = None,
+    uri: Optional[str] = None,
+    meta: Optional[str] = None,
+    modules: Optional[list[str]] = None,
+    regex: Optional[str] = None,
+    regex_options=None,
+    path_tools_pathpy: bool = False,
+    path_tools_pathlib: bool = False,
+    shlex: bool = None,
+    read0: bool = False,
+    idelim: str = None,
+    idelim_split_max: int = -1,
+    odelim: str = "\t",
+    **kwargs,
+):
     """
     Process an iterable of lines
 
@@ -273,7 +278,7 @@ def pyline(iterable,
         modules = []
 
     for _importset in modules:
-        for _import in _importset.split(','):
+        for _import in _importset.split(","):
             globals()[_import] = __import__(_import.strip())
 
     _rgx = None
@@ -286,7 +291,7 @@ def pyline(iterable,
         #            l.lower() for l in regex_options
         #                if l.lower() in REGEX_OPTIONS),
         #        _regexstr)
-        log.info(('_rgx', _regexstr))
+        log.info(("_rgx", _regexstr))
         _rgx = re.compile(_regexstr)
 
     Path = str
@@ -294,11 +299,14 @@ def pyline(iterable,
         try:
             import path as pathpy
         except ImportError:
-            log.error("`import path` failed. Is path.py installed?\n$ pip install path.py")
+            log.error(
+                "`import path` failed. Is path.py installed?\n$ pip install path.py"
+            )
             raise
         Path = pathpy.Path
     if path_tools_pathlib:
         import pathlib
+
         Path = pathlib.Path
 
     if cmd is None and codefunc is None:
@@ -314,9 +322,9 @@ def pyline(iterable,
     if cmd:
         try:
             log.info(("cmd", cmd))
-            codeobj = compile(cmd, 'command', 'eval')
+            codeobj = compile(cmd, "command", "eval")
         except Exception as e:
-            e.__dict__['cmd'] = cmd
+            e.__dict__["cmd"] = cmd
             log.error(e.__dict__)
             log.exception(e)
             raise
@@ -330,16 +338,17 @@ def pyline(iterable,
             else:
                 yield obj.__getslice__(k)
 
-    def k(obj, keys=(':',)):
+    def k(obj, keys=(":",)):
         return [obj.__getslice__(k) for k in keys]
 
     def j(args):
         return odelim.join(str(_value) for _value in args)
+
     # from itertools import imap, repeat
     # j = lambda args: imap(str, izip_longest(args, repeat(odelim)))
 
     i_last = None
-    if cmd and 'i_last' in cmd:
+    if cmd and "i_last" in cmd:
         # Consume the whole file into a list (to count lines)
         iterable = list(iterable)
         i_last = len(iterable)
@@ -347,15 +356,17 @@ def pyline(iterable,
     pp = pprint.pformat
 
     if shlex:
+
         def splitfunc(line):
             return _shlex.split(line, posix=True)
     else:
+
         def splitfunc(obj):
-            #if hasattr(obj, 'strip'):
+            # if hasattr(obj, 'strip'):
             #    return obj.strip().split(idelim, idelim_split_max)
             return obj.split(idelim, idelim_split_max)
 
-    endl = '\n'
+    endl = "\n"
 
     global_ctxt = globals()
     for i, obj in enumerate(iterable):
@@ -366,8 +377,7 @@ def pyline(iterable,
         p = path = None
         if path_tools_pathpy or path_tools_pathlib:
             try:
-                _line = (line[:-1*len(endl)]
-                         if line.endswith(endl) else line)
+                _line = line[: -1 * len(endl)] if line.endswith(endl) else line
                 if _line:
                     p = path = Path(_line) or None
                 else:
@@ -401,47 +411,46 @@ class OrderedDict_(collections.OrderedDict):
 
 # from collections import MutableMapping
 
+
 class PylineDatasource(object):
     def __init__(self, **kwargs):
         self.data = OrderedDict_()
-        self.data['uri'] = kwargs.get('uri')
-        self.data['meta'] = kwargs.get('meta', OrderedDict_)
-        self.data['resultsets'] = kwargs.get('resultsets', [])
-        results = kwargs.get('results')
+        self.data["uri"] = kwargs.get("uri")
+        self.data["meta"] = kwargs.get("meta", OrderedDict_)
+        self.data["resultsets"] = kwargs.get("resultsets", [])
+        results = kwargs.get("results")
         if results is not None:
             self.add_resultset(results)
 
     def add_resultset(self, results):
         if results is not None:
-            self.data['resultsets'].append(results)
+            self.data["resultsets"].append(results)
 
 
-typestr_func_map = collections.OrderedDict((
-    ('b', bool),
-    ('bool', bool),
-    ('xsd:bool', bool),
+typestr_func_map = collections.OrderedDict(
+    (
+        ("b", bool),
+        ("bool", bool),
+        ("xsd:bool", bool),
+        ("bin", bin),
+        ("h", hex),
+        ("hex", hex),
+        ("i", int),
+        ("int", int),
+        ("xsd:integer", int),
+        ("f", float),
+        ("float", float),
+        ("xsd:float", float),
+        ("s", str),
+        ("str", str),
+        ("xsd:string", str),
+        ("u", unicode),
+        ("unicode", unicode),
+    )
+)
 
-    ('bin', bin),
-    ('h', hex),
-    ('hex', hex),
+COLSPECSTRRGX = re.compile("""::""")
 
-    ('i', int),
-    ('int', int),
-    ('xsd:integer', int),
-
-    ('f', float),
-    ('float', float),
-    ('xsd:float', float),
-
-    ('s', str),
-    ('str', str),
-    ('xsd:string', str),
-
-    ('u', unicode),
-    ('unicode', unicode),
-))
-
-COLSPECSTRRGX = re.compile('''::''')
 
 def parse_colspecstr(colspecstr, default=unicode):
     """
@@ -476,13 +485,11 @@ def parse_colspecstr(colspecstr, default=unicode):
     if not colspecstr or not colspecstr.strip():
         return
     # parse column::datatype mappings
-    for n, colspecstr_col_n in enumerate(colspecstr.split(',')):
+    for n, colspecstr_col_n in enumerate(colspecstr.split(",")):
         colkeystr = None  # '0'
         coltypefunc = default
         # coltypestr = colspecstr_col_n.strip()
-        colspecstrrgx_split = COLSPECSTRRGX.split(
-            colspecstr_col_n,
-            maxsplit=1)
+        colspecstrrgx_split = COLSPECSTRRGX.split(colspecstr_col_n, maxsplit=1)
         if len(colspecstrrgx_split) == 2:
             colkeystr, coltypestr = colspecstrrgx_split
         elif len(colspecstrrgx_split) == 1:
@@ -496,7 +503,9 @@ def parse_colspecstr(colspecstr, default=unicode):
         # raise Exception((colkey, coltypestr, coltypefunc))
         yield (colkey, coltypefunc)
 
-SHLEXRGX = re.compile(r'''['"]+''') #
+
+SHLEXRGX = re.compile(r"""['"]+""")  #
+
 
 def parse_field(colspecfieldstr, shlex=None):
     """
@@ -513,12 +522,14 @@ def parse_field(colspecfieldstr, shlex=None):
         shlexoutput = _shlex.split(colspecfieldstr, comments=False, posix=True)
         if shlexoutput:
             shlexword1 = shlexoutput[0]
-            retval =  shlexword1
+            retval = shlexword1
         else:
             raise ValueError(colspecfieldstr)
     else:
         retval = colspecfieldstr
-    import pdb; pdb.set_trace()
+    import pdb
+
+    pdb.set_trace()
     return retval
 
 
@@ -532,14 +543,12 @@ def build_column_map(colspecstr):
     #
     if not colspecstr:
         return collections.OrderedDict()
-    if hasattr(colspecstr, 'items'):
+    if hasattr(colspecstr, "items"):
         return colspecstr
-    return collections.OrderedDict(
-        parse_colspecstr(colspecstr, default=unicode)
-    )
+    return collections.OrderedDict(parse_colspecstr(colspecstr, default=unicode))
 
 
-def get_list_from_str(str_, idelim=',', typefunc=int):
+def get_list_from_str(str_, idelim=",", typefunc=int):
     """
     Split a string of things separated by commas & cast/wrap with typefunc
 
@@ -553,12 +562,14 @@ def get_list_from_str(str_, idelim=',', typefunc=int):
     return [typefunc(x.strip()) for x in str_.split(idelim)]
 
 
-def sort_by(iterable,
-            sortstr=None,
-            reverse=False,
-            col_map=None,
-            default_type=None,
-            default_value=None):
+def sort_by(
+    iterable,
+    sortstr=None,
+    reverse=False,
+    col_map=None,
+    default_type=None,
+    default_value=None,
+):
     """sort an iterable, cast to ``col_map.get(colkey, default_type)``,
     and default to ``default_value``.
 
@@ -574,6 +585,7 @@ def sort_by(iterable,
     Returns:
         list: sorted list of lines/rows
     """
+
     # raise Exception()
     def keyfunc_iter(obj, sortstr=sortstr, col_map=col_map):
         """Parse and yield column values according to ``sortstr`` and ``col_map``
@@ -589,7 +601,7 @@ def sort_by(iterable,
             column_sequence = get_list_from_str(sortstr, typefunc=int)
         else:
             column_sequence = xrange(len(obj.result))
-        log.debug(('column_sequence', column_sequence))
+        log.debug(("column_sequence", column_sequence))
         if col_map is None:
             col_map = {}
         for n in column_sequence:
@@ -601,7 +613,13 @@ def sort_by(iterable,
                     try:
                         retval = type_func(colvalue)
                     except ValueError as e:
-                        e.msg += "\n" + repr((type_func, colvalue, e,))
+                        e.msg += "\n" + repr(
+                            (
+                                type_func,
+                                colvalue,
+                                e,
+                            )
+                        )
                         raise
                 else:
                     retval = colvalue
@@ -617,25 +635,25 @@ def sort_by(iterable,
         Returns:
             tuple: (col2, col0, col1)
         """
-        keyvalue = tuple(x if x is not None else "" for x in keyfunc_iter(obj, sortstr, col_map))  # TODO: default_value and/or approximate python 2 sort
-        errdata = [
-            (('keyvalue', keyvalue),
-              ('sortstr', sortstr))]
+        keyvalue = tuple(
+            x if x is not None else "" for x in keyfunc_iter(obj, sortstr, col_map)
+        )  # TODO: default_value and/or approximate python 2 sort
+        errdata = [(("keyvalue", keyvalue), ("sortstr", sortstr))]
         log.debug((errdata,))
         return keyvalue
 
     try:
-        sorted_values = sorted(iterable,
-                    key=keyfunc,
-                    reverse=reverse)
+        sorted_values = sorted(iterable, key=keyfunc, reverse=reverse)
     except TypeError:
         _iterable = list(iterable)
-        log.error(dict(
-            iterable=_iterable,
-            keyfunc=keyfunc,
-            reverse=reverse,
-            keyfunc_applied=[keyfunc(x) for x in _iterable]
-        ))
+        log.error(
+            dict(
+                iterable=_iterable,
+                keyfunc=keyfunc,
+                reverse=reverse,
+                keyfunc_applied=[keyfunc(x) for x in _iterable],
+            )
+        )
         raise
     return sorted_values
 
@@ -650,23 +668,23 @@ def str2boolintorfloat(str_):
     Returns:
         object: casted ``{boot, float, int, or str_.__class__}``
     """
-    match = re.match(r'([\d\.]+)', str_)
+    match = re.match(r"([\d\.]+)", str_)
     type_ = None
     if not match:
         type_ = str_.__class__
         value = str_
         value_lower = value.strip().lower()
-        if value_lower == 'true':
+        if value_lower == "true":
             type_ = bool
             value = True
-        elif value_lower == 'false':
+        elif value_lower == "false":
             type_ = bool
             value = False
         return value
     else:
         try:
             numstr = match.group(1)
-            if '.' in numstr:
+            if "." in numstr:
                 type_ = float
                 value = type_(numstr)
             else:
@@ -709,33 +727,35 @@ def parse_formatstring(str_):
         format:opt2=True
 
     """
-    fmtkey = '_output_format'
-    argkey = '_output_format_args'
-    strsplit = str_.split(':', 1)
+    fmtkey = "_output_format"
+    argkey = "_output_format_args"
+    strsplit = str_.split(":", 1)
     if len(strsplit) == 1:
         _format = strsplit[0]
         _format = _format if _format else None
-        return OrderedDict_((
-            (fmtkey, _format),
-            (argkey, None),
-        ))
+        return OrderedDict_(
+            (
+                (fmtkey, _format),
+                (argkey, None),
+            )
+        )
     else:
         _format, argstr = strsplit
         _format = _format if _format else None
         opts = OrderedDict_()
         opts[fmtkey] = _format
         opts[argkey] = argstr if argstr else None
-        _args = [x.strip() for x in argstr.split(',')]
+        _args = [x.strip() for x in argstr.split(",")]
         for arg in _args:
             if not arg:
                 continue
             key, value = None, None
-            if '=' in arg:
-                key, value = [x.strip() for x in arg.split('=', 1)]
+            if "=" in arg:
+                key, value = [x.strip() for x in arg.split("=", 1)]
             else:
-                if arg[0] == '-':
+                if arg[0] == "-":
                     key, value = arg[1:], False
-                elif arg[0] == '+':
+                elif arg[0] == "+":
                     key, value = arg[1:], True
                 else:
                     key, value = arg, True
@@ -748,16 +768,16 @@ def parse_formatstring(str_):
 
 class ResultWriter(object):
     OUTPUT_FILETYPES = {
-        'csv': ",",
-        'json': True,
-        'jsonlines': True,
-        'jsonl': True,
-        'tsv': "\t",
-        'html': True,
-        'jinja': True,
+        "csv": ",",
+        "json": True,
+        "jsonlines": True,
+        "jsonl": True,
+        "tsv": "\t",
+        "html": True,
+        "jinja": True,
         "txt": True,
         "checkbox": True,
-        "chk": True
+        "chk": True,
     }
     output_format = None
 
@@ -790,15 +810,13 @@ class ResultWriter(object):
     @classmethod
     def is_valid_output_format(cls, _output_formatstr):
         opts = parse_formatstring(_output_formatstr)
-        _output_format = opts.get('_output_format')
+        _output_format = opts.get("_output_format")
         if _output_format in cls.OUTPUT_FILETYPES:
             return _output_format
         return False
 
     @classmethod
-    def get_writer(cls, _output,
-                   output_format="csv",
-                   **kwargs):
+    def get_writer(cls, _output, output_format="csv", **kwargs):
         """get writer object for _output with the specified output_format
 
         Args:
@@ -814,15 +832,15 @@ class ResultWriter(object):
             ResultWriter: a configured ResultWriter subclass instance
         """
         opts = parse_formatstring(output_format.strip())
-        _output_format = opts.pop('_output_format', None)
+        _output_format = opts.pop("_output_format", None)
         opts.update(kwargs)
 
         if not cls.is_valid_output_format(_output_format):
             raise ValueError(
                 "Unknown output format: %r. "
-                "Supported output formats: %r" % (
-                    _output_format,
-                    list(cls.OUTPUT_FILETYPES.keys())))
+                "Supported output formats: %r"
+                % (_output_format, list(cls.OUTPUT_FILETYPES.keys()))
+            )
 
         writer = None
         if _output_format == "txt":
@@ -830,7 +848,7 @@ class ResultWriter(object):
         elif _output_format == "csv":
             writer = ResultWriter_csv(_output, **opts)
         elif _output_format == "tsv":
-            writer = ResultWriter_csv(_output, delimiter='\t', **opts)
+            writer = ResultWriter_csv(_output, delimiter="\t", **opts)
         elif _output_format == "json":
             writer = ResultWriter_json(_output)
         elif _output_format in ("jsonlines", "jsonl"):
@@ -845,7 +863,7 @@ class ResultWriter(object):
             raise ValueError("_output_format: %r" % _output_format)
 
         output_func = None
-        if kwargs.get('number_lines'):
+        if kwargs.get("number_lines"):
             output_func = writer.write_numbered
         else:
             output_func = writer.write
@@ -854,28 +872,26 @@ class ResultWriter(object):
 
 
 class ResultWriter_txt(ResultWriter):
-    output_format = 'txt'
+    output_format = "txt"
 
     def write_numbered(self, obj):
-        self.write(obj._numbered_str(odelim='\t'))
+        self.write(obj._numbered_str(odelim="\t"))
 
 
 class ResultWriter_csv(ResultWriter):
-    output_format = 'csv'
+    output_format = "csv"
 
     def setup(self, *args, **kwargs):
         self.delimiter = kwargs.get(
-            'delimiter',
-            ResultWriter.OUTPUT_FILETYPES.get(
-                self.output_format,
-                ','))
-        self._output_csv = csv.writer(self._output,
-                                      quoting=csv.QUOTE_NONNUMERIC,
-                                      delimiter=self.delimiter)
+            "delimiter", ResultWriter.OUTPUT_FILETYPES.get(self.output_format, ",")
+        )
+        self._output_csv = csv.writer(
+            self._output, quoting=csv.QUOTE_NONNUMERIC, delimiter=self.delimiter
+        )
         #                             doublequote=True)
 
     def header(self, *args, **kwargs):
-        attrs = kwargs.get('attrs')
+        attrs = kwargs.get("attrs")
         if attrs is not None:
             self._output_csv.writerow(attrs)
 
@@ -887,119 +903,115 @@ class ResultWriter_csv(ResultWriter):
 
 
 class ResultWriter_json(ResultWriter):
-    output_format = 'json'
+    output_format = "json"
 
     def write(self, obj):
-        print(
-            json.dumps(
-                obj._asdict(),
-                indent=2),
-            end=',\n',
-            file=self._output)
+        print(json.dumps(obj._asdict(), indent=2), end=",\n", file=self._output)
 
     write_numbered = write
 
 
 class ResultWriter_jsonlines(ResultWriter):
-    output_format = 'jsonlines'
+    output_format = "jsonlines"
 
     def write(self, obj):
-        print(
-            json.dumps(
-                obj._asdict(),
-                indent=0),
-            end='\n',
-            file=self._output)
+        print(json.dumps(obj._asdict(), indent=0), end="\n", file=self._output)
 
     write_numbered = write
 
 
 class ResultWriter_html(ResultWriter):
-    output_format = 'html'
+    output_format = "html"
     escape_func = staticmethod(html_escape)
 
     def header(self, *args, **kwargs):
         self._output.write("<table>")
         self._output.write("<tr>")
-        attrs = kwargs.get('attrs')
+        attrs = kwargs.get("attrs")
         if attrs is not None:
             for col in attrs:
-                self._output.write(u"<th>%s</th>" % self.escape_func(col))
+                self._output.write("<th>%s</th>" % self.escape_func(col))
         self._output.write("</tr>")
 
     def _html_row(self, obj):
-        yield '\n<tr>'
+        yield "\n<tr>"
         for attr, col in iteritems(obj._asdict()):  # TODO: zip(_fields, ...)
-            yield "<td%s>" % (
-                attr is not None and (' class="%s"' % attr) or '')
-            if hasattr(col, '__iter__'):
+            yield "<td%s>" % (attr is not None and (' class="%s"' % attr) or "")
+            if hasattr(col, "__iter__"):
                 for value in col:
-                    yield u'<span>%s</span>' % self.escape_func(value)
+                    yield "<span>%s</span>" % self.escape_func(value)
             else:
                 # TODO
-                colvalue = (
-                    col and hasattr(col, 'rstrip') and col.rstrip()
-                    or str(col))
+                colvalue = col and hasattr(col, "rstrip") and col.rstrip() or str(col)
                 yield self.escape_func(colvalue)
             yield "</td>"
         yield "</tr>"
 
     def write(self, obj):
-        return self._output.write(u''.join(self._html_row(obj,)))
+        return self._output.write(
+            "".join(
+                self._html_row(
+                    obj,
+                )
+            )
+        )
 
     def footer(self):
-        self._output.write('</table>\n')
+        self._output.write("</table>\n")
 
 
 class ResultWriter_jinja(ResultWriter):
-    output_format = 'jinja'
+    output_format = "jinja"
     escape_func = None  # staticmethod(html_escape)
 
     def setup(self, *args, **kwargs):
-        log.debug(('args', args))
-        log.debug(('kwargs', kwargs))
+        log.debug(("args", args))
+        log.debug(("kwargs", kwargs))
         import jinja2
         import markupsafe
         import os
+
         self.escape_func = markupsafe.escape
-        templatepath = kwargs.get('template', kwargs.get('tmpl'))
+        templatepath = kwargs.get("template", kwargs.get("tmpl"))
         if templatepath is None:
             raise ValueError(
                 "Specify at least a template= like "
-                "'jinja:+autoescape,template=./template.jinja2'")
+                "'jinja:+autoescape,template=./template.jinja2'"
+            )
         self.templatepath = os.path.dirname(templatepath)
         self.template = os.path.basename(templatepath)
         self.loader = jinja2.FileSystemLoader(self.templatepath)
         envargs = OrderedDict_()
-        envargs['autoescape'] = kwargs.get('autoescape', True)
+        envargs["autoescape"] = kwargs.get("autoescape", True)
         # envargs['extensions'] = []
         self.env = jinja2.Environment(**envargs)
         self.tmpl = self.loader.load(self.env, self.template)
 
     def write(self, obj):
         context = OrderedDict_()
-        context['obj'] = obj
+        context["obj"] = obj
         jinja2_output = self.tmpl.render(**context)
         return self._output.write(jinja2_output)
 
 
 class ResultWriter_checkbox(ResultWriter):
-    output_format = 'checkbox'
+    output_format = "checkbox"
 
     def _checkbox_row(self, obj, wrap=79):
-        yield u'\n'.join(textwrap.wrap(
-            unicode(obj),
-            initial_indent=u'- [ ] ',
-            subsequent_indent=u'      '
-        ))
-        yield '\n'
+        yield "\n".join(
+            textwrap.wrap(
+                unicode(obj), initial_indent="- [ ] ", subsequent_indent="      "
+            )
+        )
+        yield "\n"
 
     def write(self, obj):
-        return self._output.write(u''.join(self._checkbox_row(obj)))
+        return self._output.write("".join(self._checkbox_row(obj)))
 
 
 def get_option_parser():
     import optparse
+
     prs = optparse.OptionParser(
         usage=(
             "%prog [-v] [-f <path>] [-o|--output-file=<path>] \n"
@@ -1016,117 +1028,179 @@ def get_option_parser():
             "Pyline is a UNIX command-line tool for line-based processing "
             "in Python with regex and output transform features "
             "similar to grep, sed, and awk."
-            ),
-        epilog=EPILOG)
+        ),
+        epilog=EPILOG,
+    )
 
-    prs.add_option('-f', '--in', '--input-file',
-                   dest='file',
-                   action='store',
-                   default='-',
-                   help="Input file  #default: '-' for stdin")
-    prs.add_option('-0', '--read0',
-                   dest='read0',
-                   action='store',
-                   default=False,
-                   help='Read as null-byte delimited lines (r"\\0")'
-                        "instead of newlines")
+    prs.add_option(
+        "-f",
+        "--in",
+        "--input-file",
+        dest="file",
+        action="store",
+        default="-",
+        help="Input file  #default: '-' for stdin",
+    )
+    prs.add_option(
+        "-0",
+        "--read0",
+        dest="read0",
+        action="store",
+        default=False,
+        help='Read as null-byte delimited lines (r"\\0")instead of newlines',
+    )
 
-    prs.add_option('-F', '--input-delim',
-                   dest='idelim',
-                   action='store',
-                   default=None,
-                   help=('If specified, split lines into words by this str. '
-                         '  w=words=line.split(-F, --max). '
-                         'If not specified, by default split on whitespace: '
-                         ' w=line.split(None)'))
-    prs.add_option('--max', '--input-delim-split-max', '--max-split',
-                   dest='idelim_split_max',
-                   action='store',
-                   default=-1,
-                   type=int,
-                   help='words = line.split(-F, --max)')
-    prs.add_option('--shlex',
-                   action='store_true',
-                   help='words = shlex.split(line)')
+    prs.add_option(
+        "-F",
+        "--input-delim",
+        dest="idelim",
+        action="store",
+        default=None,
+        help=(
+            "If specified, split lines into words by this str. "
+            "  w=words=line.split(-F, --max). "
+            "If not specified, by default split on whitespace: "
+            " w=line.split(None)"
+        ),
+    )
+    prs.add_option(
+        "--max",
+        "--input-delim-split-max",
+        "--max-split",
+        dest="idelim_split_max",
+        action="store",
+        default=-1,
+        type=int,
+        help="words = line.split(-F, --max)",
+    )
+    prs.add_option("--shlex", action="store_true", help="words = shlex.split(line)")
 
-    prs.add_option('-o', '--out', '--output-file',
-                   dest='output',
-                   action='store',
-                   default='-',
-                   help="Output file  #default: '-' for stdout")
-    prs.add_option('-d', '--output-delim',
-                   dest='odelim',
-                   default="\t",
-                   help='String output delimiter for lists and tuples'
-                        '''  #default: '\\t' (tab, chr(9), $'\\t')''')
-    prs.add_option('-O', '--output-format', '--output-filetype',
-                   dest='_output_format',
-                   action='store',
-                   default='txt',
-                   help=("Output output_format <txt|csv|tsv|json||jsonlines|jsonl||checkbox|chk||html> "
-                         "  #default: txt"))
-    prs.add_option('-p', '--pathpy',
-                   dest='path_tools_pathpy',
-                   action='store_true',
-                   help='p = path.Path(line); import path  '
-                        ' #pip install path.py')
+    prs.add_option(
+        "-o",
+        "--out",
+        "--output-file",
+        dest="output",
+        action="store",
+        default="-",
+        help="Output file  #default: '-' for stdout",
+    )
+    prs.add_option(
+        "-d",
+        "--output-delim",
+        dest="odelim",
+        default="\t",
+        help="String output delimiter for lists and tuples"
+        """  #default: '\\t' (tab, chr(9), $'\\t')""",
+    )
+    prs.add_option(
+        "-O",
+        "--output-format",
+        "--output-filetype",
+        dest="_output_format",
+        action="store",
+        default="txt",
+        help=(
+            "Output output_format <txt|csv|tsv|json||jsonlines|jsonl||checkbox|chk||html> "
+            "  #default: txt"
+        ),
+    )
+    prs.add_option(
+        "-p",
+        "--pathpy",
+        dest="path_tools_pathpy",
+        action="store_true",
+        help="p = path.Path(line); import path   #pip install path.py",
+    )
 
-    prs.add_option('--pathlib',
-                   dest='path_tools_pathlib',
-                   action='store_true',
-                   help=('p = pathlib.Path(line); import pathlib'))
+    prs.add_option(
+        "--pathlib",
+        dest="path_tools_pathlib",
+        action="store_true",
+        help=("p = pathlib.Path(line); import pathlib"),
+    )
 
-    prs.add_option('-r', '--regex',
-                   dest='regex',
-                   action='store',
-                   help='rgx = re.compile(-r).match(line)')
-    prs.add_option('-R', '--regex-options',
-                   dest='regex_options',
-                   action='store',
-                   default='',
-                   help='Regex options: I L M S X U (ref: `$ pydoc re`)')
+    prs.add_option(
+        "-r",
+        "--regex",
+        dest="regex",
+        action="store",
+        help="rgx = re.compile(-r).match(line)",
+    )
+    prs.add_option(
+        "-R",
+        "--regex-options",
+        dest="regex_options",
+        action="store",
+        default="",
+        help="Regex options: I L M S X U (ref: `$ pydoc re`)",
+    )
 
-    prs.add_option('--cols',
-                   dest='col_mapstr',
-                   action='store',
-                   help='Optional column mappings (4::int, 0::unicode)')
+    prs.add_option(
+        "--cols",
+        dest="col_mapstr",
+        action="store",
+        help="Optional column mappings (4::int, 0::unicode)",
+    )
 
-    prs.add_option("-s", "--sort-asc",
-                   dest="sort_asc",
-                   action='store',
-                   help=("sorted(lines, key=itemgetter(*-s))"))
-    prs.add_option("-S", "--sort-desc",
-                   dest="sort_desc",
-                   action='store',
-                   help=("sorted(lines, key=itemgetter(*-S), reverse=True)"))
+    prs.add_option(
+        "-s",
+        "--sort-asc",
+        dest="sort_asc",
+        action="store",
+        help=("sorted(lines, key=itemgetter(*-s))"),
+    )
+    prs.add_option(
+        "-S",
+        "--sort-desc",
+        dest="sort_desc",
+        action="store",
+        help=("sorted(lines, key=itemgetter(*-S), reverse=True)"),
+    )
 
-    prs.add_option('-n', '--number-lines',
-                   dest='number_lines',
-                   action='store_true',
-                   help='Print line numbers of matches')
+    prs.add_option(
+        "-n",
+        "--number-lines",
+        dest="number_lines",
+        action="store_true",
+        help="Print line numbers of matches",
+    )
 
-    prs.add_option('-m', '--modules',
-                   dest='modules',
-                   action='append',
-                   default=[],
-                   help='for m in modules: import m  #default: []')
+    prs.add_option(
+        "-m",
+        "--modules",
+        dest="modules",
+        action="append",
+        default=[],
+        help="for m in modules: import m  #default: []",
+    )
 
-    prs.add_option('-i', '--ipython',
-                   dest='start_ipython',
-                   action='store_true',
-                   help='Start IPython with results')
+    prs.add_option(
+        "-i",
+        "--ipython",
+        dest="start_ipython",
+        action="store_true",
+        help="Start IPython with results",
+    )
 
-    prs.add_option('-v', '--verbose',
-                   dest='verbose',
-                   action='store_true',)
-    prs.add_option('-q', '--quiet',
-                   dest='quiet',
-                   action='store_true',)
+    prs.add_option(
+        "-v",
+        "--verbose",
+        dest="verbose",
+        action="store_true",
+    )
+    prs.add_option(
+        "-q",
+        "--quiet",
+        dest="quiet",
+        action="store_true",
+    )
 
-    prs.add_option('--version',
-                   dest='version',
-                   action='store_true',
-                   help='Print the version string')
+    prs.add_option(
+        "--version",
+        dest="version",
+        action="store_true",
+        help="Print the version string",
+    )
 
     return prs
 
@@ -1138,36 +1212,33 @@ def get_sort_function(**kwargs):  # (sort_asc, sort_desc)
     Args:
         opts (dict): sort_asc:bool, sort_desc:bool
     """
-    sortstr = kwargs.get('sortstr')
+    sortstr = kwargs.get("sortstr")
     sortfunc = None
     reverse = None
-    col_map = kwargs.get('col_map')
-    sort_asc = kwargs.get('sort_asc')
-    sort_desc = kwargs.get('sort_desc')
+    col_map = kwargs.get("col_map")
+    sort_asc = kwargs.get("sort_asc")
+    sort_desc = kwargs.get("sort_desc")
     if sort_asc and sort_desc:
         raise ValueError("sort_asc and sort_desc are both specified")
     if sort_asc:
         sortstr = sort_asc
         reverse = False
-        log.info((("sort_asc", sortstr), ('reverse', reverse)))
+        log.info((("sort_asc", sortstr), ("reverse", reverse)))
     if sort_desc:
         sortstr = sort_desc
         reverse = True
-        log.info((("sort_desc", sortstr), ('reverse', reverse)))
+        log.info((("sort_desc", sortstr), ("reverse", reverse)))
     if sortstr:
-        def _sortfunc(iterable,
-                      sortstr=sortstr,
-                      reverse=reverse,
-                      col_map=col_map):
-            return sort_by(
-                iterable,
-                sortstr,
-                reverse=reverse,
-                col_map=col_map)
+
+        def _sortfunc(iterable, sortstr=sortstr, reverse=reverse, col_map=col_map):
+            return sort_by(iterable, sortstr, reverse=reverse, col_map=col_map)
+
         sortfunc = _sortfunc
     else:
+
         def null_sortfunc(iterable):
             return iterable
+
         sortfunc = null_sortfunc
     # import pdb; pdb.set_trace()  # XXX BREAKPOINT
     return sortfunc
@@ -1202,13 +1273,13 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
 
     prs = get_option_parser()
 
-    argv = args = list(args) if args is not None else [] # sys.argv[1:]
+    argv = args = list(args) if args is not None else []  # sys.argv[1:]
     if opts is None:
         (opts, args) = prs.parse_args(args)
     optsdict = None
-    if hasattr(opts, '__dict__'):
+    if hasattr(opts, "__dict__"):
         optsdict = opts.__dict__
-    elif hasattr(opts, 'items'):
+    elif hasattr(opts, "items"):
         optsdict = opts
     else:
         raise ValueError(opts)
@@ -1219,113 +1290,115 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
     log = logging.getLogger(DEFAULT_LOGGER)
 
     # if -q/--quiet is not specified
-    if not opts.get('quiet'):
-        #logging.basicConfig(
-        #)
+    if not opts.get("quiet"):
+        # logging.basicConfig(
+        # )
         log.setLevel(logging.WARN)
 
         # if -v/--verbose is specified
-        if opts.get('verbose'):
+        if opts.get("verbose"):
             log.setLevel(logging.DEBUG)
 
     # if -q/--quiet is specified
     else:
         log.setLevel(logging.ERROR)
 
-    log.info(('pyline.version', __version__))
-    log.info(('argv', argv))
-    log.info(('args', args))
+    log.info(("pyline.version", __version__))
+    log.info(("argv", argv))
+    log.info(("args", args))
 
-    if opts.get('version'):
+    if opts.get("version"):
         print(__version__)
         return 0, None
 
-    opts['col_map'] = collections.OrderedDict()
-    if opts.get('col_mapstr'):
-        opts['col_map'] = build_column_map(opts.get('col_mapstr'))
+    opts["col_map"] = collections.OrderedDict()
+    if opts.get("col_mapstr"):
+        opts["col_map"] = build_column_map(opts.get("col_mapstr"))
 
     sortfunc = None
-    if opts.get('sort_asc') and opts.get('sort_desc'):
+    if opts.get("sort_asc") and opts.get("sort_desc"):
         prs.error("both sort-asc and sort-desc are specified")
 
-    if 'cmd' not in opts:
-        cmd = ' '.join(args)
+    if "cmd" not in opts:
+        cmd = " ".join(args)
         if not cmd.strip():
-            if opts.get('regex'):
-                if (opts.get('_output_format') == 'json'
-                        and '<' in opts.get('regex')):  # TODO:
-                    cmd = 'rgx and rgx.groupdict()'
+            if opts.get("regex"):
+                if opts.get("_output_format") == "json" and "<" in opts.get(
+                    "regex"
+                ):  # TODO:
+                    cmd = "rgx and rgx.groupdict()"
                 else:
-                    cmd = 'rgx and rgx.groups()'
+                    cmd = "rgx and rgx.groups()"
             else:
-                cmd = 'obj'
-        opts['cmd'] = cmd.strip()
+                cmd = "obj"
+        opts["cmd"] = cmd.strip()
 
-    log.info(('cmd', opts['cmd']))
+    log.info(("cmd", opts["cmd"]))
     # opts['attrs'] = PylineResult._fields # XX
-    opts['attrs'] = list(opts['col_map'].keys()) if 'col_map' in opts else None
+    opts["attrs"] = list(opts["col_map"].keys()) if "col_map" in opts else None
 
     try:
         if iterable is not None:
-            opts['_file'] = iterable
+            opts["_file"] = iterable
         else:
-            if opts.get('file') == '-':
+            if opts.get("file") == "-":
                 # opts._file = sys.stdin
                 if IS_PYTHON2:
-                    opts['_file'] = codecs.getreader('utf8')(sys.stdin)
+                    opts["_file"] = codecs.getreader("utf8")(sys.stdin)
                 else:
-                    opts['_file'] = sys.stdin
+                    opts["_file"] = sys.stdin
             else:
                 if IS_PYTHON2:
-                    opts['_file'] = codecs.open(opts['file'], 'r', encoding='utf8')
+                    opts["_file"] = codecs.open(opts["file"], "r", encoding="utf8")
                 else:
-                    opts['_file'] = open(opts['file'], 'r', encoding='utf8')
+                    opts["_file"] = open(opts["file"], "r", encoding="utf8")
 
-            if opts.get('read0'):
-                opts['_file'] = open(opts['file'], 'rb', encoding='utf8')
+            if opts.get("read0"):
+                opts["_file"] = open(opts["file"], "rb", encoding="utf8")
 
         if output is not None:
-            opts['_output'] = output
+            opts["_output"] = output
         else:
-            if opts.get('output') == '-':
+            if opts.get("output") == "-":
                 # opts._output = sys.stdout
                 if IS_PYTHON2:
-                    opts['_output'] = codecs.getwriter('utf8')(sys.stdout)
+                    opts["_output"] = codecs.getwriter("utf8")(sys.stdout)
                 else:
-                    opts['_output'] = sys.stdout
-            elif opts.get('output'):
+                    opts["_output"] = sys.stdout
+            elif opts.get("output"):
                 if IS_PYTHON2:
-                    opts['_output'] = codecs.open(opts['output'], 'w', encoding='utf8')
+                    opts["_output"] = codecs.open(opts["output"], "w", encoding="utf8")
                 else:
-                    opts['_output'] = open(opts['output'], 'w', encoding='utf8')
+                    opts["_output"] = open(opts["output"], "w", encoding="utf8")
             else:
                 # opts._output = sys.stdout
                 if IS_PYTHON2:
-                    opts['_output'] = codecs.getwriter('utf8')(sys.stdout)
+                    opts["_output"] = codecs.getwriter("utf8")(sys.stdout)
                 else:
-                    opts['_output'] = sys.stdout
+                    opts["_output"] = sys.stdout
 
-        if opts.get('_output_format') is None:
-            #opts._output_format = DEFAULTS['_output_format']
-            #opts['_output_format'] = 'csv'
-            opts['_output_format'] = 'json'
-            #TODO
-        log.info(('_output_format', opts['_output_format']))
+        if opts.get("_output_format") is None:
+            # opts._output_format = DEFAULTS['_output_format']
+            # opts['_output_format'] = 'csv'
+            opts["_output_format"] = "json"
+            # TODO
+        log.info(("_output_format", opts["_output_format"]))
 
-        log.info(('opts', opts))
+        log.info(("opts", opts))
 
         writer = ResultWriter.get_writer(
-            opts['_output'],
-            output_format=opts['_output_format'],
-            number_lines=opts.get('number_lines'),
-            attrs=opts['attrs'])
+            opts["_output"],
+            output_format=opts["_output_format"],
+            number_lines=opts.get("number_lines"),
+            attrs=opts["attrs"],
+        )
         writer.header()
 
         sortfunc = get_sort_function(**opts)
         # if sorting, collect and sort before printing
         if sortfunc:
             _results = []
-            for result in pyline(opts['_file'], **opts):
+            for result in pyline(opts["_file"], **opts):
                 if not result.result:
                     # skip result if not bool(result.result)
                     continue
@@ -1338,7 +1411,7 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
                 writer.output_func(result)
         # if not sorting, return a result iterator
         else:
-            for result in pyline(opts['_file'], **opts):
+            for result in pyline(opts["_file"], **opts):
                 if not result.result:
                     # skip result if not bool(result.result)
                     continue
@@ -1348,9 +1421,12 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
 
         writer.footer()
     finally:
-        if (getattr(opts.get('_file', codecs.EncodedFile),
-                    'fileno', int)() not in (0, 1, 2)):
-            opts['_file'].close()
+        if getattr(opts.get("_file", codecs.EncodedFile), "fileno", int)() not in (
+            0,
+            1,
+            2,
+        ):
+            opts["_file"].close()
 
     # opts
     # results
@@ -1361,6 +1437,7 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
 
 def main_entrypoint():
     import sys
+
     retval, _ = main(args=sys.argv[1:])
     sys.exit(retval)
 
