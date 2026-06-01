@@ -227,21 +227,23 @@ def log_(*args, **kwargs):
         else:
             return kwargs
 
+from typing import Optional
 def pyline(iterable,
-           cmd=None,
+           cmd: Optional[str] = None,
            codefunc=None,
-           col_map=None,
-           uri=None,
-           meta=None,
-           modules=[],
-           regex=None,
+           col_map: Optional[str] = None,
+           uri: Optional[str] = None,
+           meta: Optional[str] = None,
+           modules: Optional[list[str]] = None,
+           regex: Optional[str] = None,
            regex_options=None,
-           path_tools_pathpy=False,
-           path_tools_pathlib=False,
-           shlex=None,
-           idelim=None,
-           idelim_split_max=-1,
-           odelim="\t",
+           path_tools_pathpy: bool = False,
+           path_tools_pathlib: bool = False,
+           shlex: bool = None,
+           read0: bool = False,
+           idelim: str = None,
+           idelim_split_max: int = -1,
+           odelim: str = "\t",
            **kwargs):
     """
     Process an iterable of lines
@@ -249,14 +251,17 @@ def pyline(iterable,
     Args:
         iterable (iterable): iterable of strings (e.g. sys.stdin or a file)
         cmd (str): python command string
-        codefunc (callable): alternative to cmd ``codefunc(locals())``
+        codefunc (callable): if passed, call ``codefunc(locals())`` instead of ``~eval(cmd)``
         col_map (None or OrderedDict): a column-key to type-callable mapping
         uri (None or str): uri of the current file (for PylineResult objs)
         meta (None or str): uri of the current file (for PylineResult objs)
         modules ([str]): list of modules to import
         regex (str): regex pattern to match (with groups)
         regex_options (TODO): Regex options: I L M S X U (see ``pydoc re``)
-        path_tools (bool): try to cast each line to a file
+        path_tools_pathpy (bool): try to cast each line to a file
+        path_tools_pathlib (bool): try to cast each line to a file
+        shlex (bool): line
+        read0  (bool):
         idelim (str): input delimiter
         idelim_split_max (int): str.split(idelim, idelim_split_max)
         odelim (str): output delimiter
@@ -264,6 +269,9 @@ def pyline(iterable,
     Returns:
         iterable of PylineResult namedtuples
     """
+
+    if modules is None:
+        modules = []
 
     for _importset in modules:
         for _import in _importset.split(','):
@@ -284,7 +292,11 @@ def pyline(iterable,
 
     Path = str
     if path_tools_pathpy:
-        import path as pathpy
+        try:
+            import path as pathpy
+        except ImportError:
+            log.error("`import path` failed. Is path.py installed?\n$ pip install path.py")
+            raise
         Path = pathpy.Path
     if path_tools_pathlib:
         import pathlib
@@ -340,10 +352,9 @@ def pyline(iterable,
             return _shlex.split(line, posix=True)
     else:
         def splitfunc(obj):
-            if hasattr(obj, 'strip'):
-                return obj.strip().split(idelim, idelim_split_max)
-            else:
-                return obj
+            #if hasattr(obj, 'strip'):
+            #    return obj.strip().split(idelim, idelim_split_max)
+            return obj.split(idelim, idelim_split_max)
 
     endl = '\n'
 
@@ -992,9 +1003,9 @@ def get_option_parser():
     import optparse
     prs = optparse.OptionParser(
         usage=(
-            "%prog [-f<path>] [-o|--output-file=<path>] \n"
+            "%prog  [-v ] [-f<path>] [-o|--output-file=<path>] \n"
             "              [-F|--input-delim='\\t'] \n"
-            "              [--max|--max-split=3] \n"
+            "              [--ma x|--max-split=3] \n"
             "              [-d|--output-delimiter='||'] \n"
             "              [-n|--number-lines] \n"
             "              [-m|--modules=<mod2>] \n"
@@ -1014,13 +1025,21 @@ def get_option_parser():
                    action='store',
                    default='-',
                    help="Input file  #default: '-' for stdin")
+    prs.add_option('-0', '--read0',
+                   dest='read0',
+                   action='store',
+                   default=False,
+                   help='Read as null-byte delimited lines (r"\\0")'
+                        "instead of newlines")
 
     prs.add_option('-F', '--input-delim',
                    dest='idelim',
                    action='store',
                    default=None,
-                   help=('words = line.split(-F)'
-                         '  #default: None (whitespace)'))
+                   help=('If specified, split lines into words by this str. '
+                         '  w=words=line.split(-F, --max). '
+                         'If not specified, by default split on whitespace: '
+                         ' w=line.split(None)'))
     prs.add_option('--max', '--input-delim-split-max', '--max-split',
                    dest='idelim_split_max',
                    action='store',
@@ -1262,6 +1281,9 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
                     opts['_file'] = codecs.open(opts['file'], 'r', encoding='utf8')
                 else:
                     opts['_file'] = open(opts['file'], 'r', encoding='utf8')
+
+            if opts.get('read0'):
+                opts['_file'] = open(opts['file'], 'rb', encoding='utf8')
 
         if output is not None:
             opts['_output'] = output

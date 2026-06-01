@@ -36,8 +36,9 @@ if sys.argv[-1] == 'publish':
 
 
 class PyTestCommand(Command):
+    """Run pytest as `python setup.py test`"""
     user_options = []
-    description = "Run runtests.py with the current sys.executable"
+    description = "Run $ sys.executable -m pytest -v tests/"
 
     def initialize_options(self):
         pass
@@ -46,10 +47,12 @@ class PyTestCommand(Command):
         pass
 
     def run(self):
-        cmd = [sys.executable,
-               "-m", "pytest",
-               "-v",
-               os.path.join(SETUPPY_PATH, "tests/"),
+        """Run pytest with subprocess.call([sys.executable, -m, pytest, -v, "tests/"])"""
+        cmd = [
+            sys.executable,
+            "-m", "pytest",
+            "-v",
+            os.path.join(SETUPPY_PATH, "tests/"),
         ]
 
         cmdstr = ' '.join(cmd)
@@ -58,6 +61,18 @@ class PyTestCommand(Command):
 
         errno = subprocess.call(cmd)
         raise SystemExit(errno)
+
+
+extras_require = {
+    'all': [
+        'path.py',
+        'jinja2',
+    ],
+    'test': [
+        'path.py',
+        'jinja2',
+    ]
+}
 
 
 def build_long_description():
@@ -89,6 +104,7 @@ setup(
                  'pyline'},
     include_package_data=True,
     install_requires=[],
+    extras_require=extras_require,
     license="PSF",
     zip_safe=False,
     keywords='pyline sed grep',
@@ -101,6 +117,7 @@ setup(
         'Programming Language :: Python :: 2.7',
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.12",
     ],
     entry_points={
         'console_scripts': [

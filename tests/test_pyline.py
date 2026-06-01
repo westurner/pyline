@@ -433,7 +433,8 @@ class TestPylineMain(LoggingTestCase, unittest.TestCase):
              'os',
              'os.path.isfile(line) and (os.stat(line).st_size, line)'),
             #
-            ("-p", "p and p.is_file() and (p.size, p, p.stat())")
+            ("-p", "p and p.is_file() and (p.size, p, p.stat())"),
+            ("--pathlib", "p and p.is_file() and (os.path.getsize(p), p, os.path.stat(p))")
         )
 
         TEST_ARGS = ('-f', self.TEST_FILE)
@@ -452,13 +453,17 @@ class TestPylineMain(LoggingTestCase, unittest.TestCase):
                     raise
 
 
+
 class TestPylineConsoleMain(unittest.TestCase):
     def test_pyline_console_main_0(self):
         # note: this expects that pyline is installed with either:
         #   python setup.py develop # or
         #   python setup.py install
-        import shutil
-        pyline_bin = shutil.which('pyline')
+        try:
+            from shutil import which as find_executable
+        except ImportError:
+            from distutils.spawn import find_executable
+        pyline_bin = find_executable('pyline')
         self.assertTrue(pyline_bin)
         cmd = [pyline_bin, '--help']
         import subprocess
