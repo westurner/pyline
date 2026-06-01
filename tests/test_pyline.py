@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from __future__ import print_function
 """
 test_pyline
 ----------------------------------
 
 Tests for `pyline` module.
 """
+from __future__ import print_function
 import collections
 import difflib
 # import json
@@ -21,20 +21,23 @@ import types
 import unittest
 from unittest import mock
 
-IS_PYTHON2 = sys.version_info.major == 2
-
 try:
-    from itertools import izip_longest
+    from itertools import izip_longest  # type: ignore
 except ImportError:
     from itertools import zip_longest as izip_longest
-    basestring = str
 
 try:
-    import StringIO as io   # Python 2
+    import StringIO as io  # type: ignore
 except ImportError:
-    import io               # Python 3
+    import io
 
-from pyline import pyline
+pyline = importlib.import_module('pyline.pyline')
+
+IS_PYTHON2 = sys.version_info.major == 2
+
+if not IS_PYTHON2:  # pragma: no branch
+    basestring = str
+    unicode = str
 
 TEST_INPUT = """
 Lines
@@ -77,7 +80,7 @@ e 1 500
 """
 
 TEST_OUTPUT_A0_SORT_DESC_2 = '\n'.join(
-    l for l in TEST_OUTPUT_A0_SORT_ASC_2.splitlines()[::-1]
+    line for line in TEST_OUTPUT_A0_SORT_ASC_2.splitlines()[::-1]
 )
 
 _IO = collections.namedtuple('IO', ['args', 'kwargs', 'expectedoutput'])
@@ -127,7 +130,7 @@ class SequenceTestCase(unittest.TestCase):
         """
         header1 = header1 if header1 is not None else 'thing1'
         header2 = header2 if header2 is not None else 'thing2'
-        obj1_repr_maxwidth = None
+        obj1_repr_maxwidth = 0
         # obj2_repr_maxwidth = None
         seq1_and_seq2 = []
         for obj1, obj2 in izip_longest(seq1, seq2):
@@ -208,19 +211,18 @@ class SequenceTestCase(unittest.TestCase):
                 lineterm='',
             )
             # diffstr_ndiff = list(difflib.ndiff(seq1_str, seq2_str))
-            errmsg = unicode('\n').join((
-                e.message,
+            errmsg = '\n'.join((
+                str(e),
                 '\n',
-                unicode('\n').join(sidebysidestr),
+                '\n'.join(sidebysidestr),
                 '\n',
-                unicode('\n').join(diffstr_unified),
+                '\n'.join(diffstr_unified),
                 '\n',
                 # unicode('\n').join(diffstr_ndiff),
-                unicode('\n').join(updownstr),
+                '\n'.join(updownstr),
             ))
-            e.message = errmsg
             print(errmsg)
-            raise
+            raise AssertionError(errmsg)
 
     def assertTestIO(self, testio, msg=None):
         """
@@ -371,12 +373,8 @@ class TestPylineMain(LoggingTestCase, unittest.TestCase):
     def setup_TEST_FILE(self):
         (self._test_file_fd, self.TEST_FILE) = tempfile.mkstemp(text=True)
         fd = self._test_file_fd
-        if IS_PYTHON2:
-            os.write(fd, TEST_INPUT)
-            os.write(fd, self.TEST_FILE)
-        else:
-            os.write(fd, TEST_INPUT.encode('utf8'))
-            os.write(fd, self.TEST_FILE.encode('utf8'))
+        os.write(fd, TEST_INPUT.encode('utf8'))
+        os.write(fd, self.TEST_FILE.encode('utf8'))
 
         self.log.info("setup: %r", repr(self.TEST_FILE))
 
@@ -465,7 +463,7 @@ class TestPylineConsoleMain(unittest.TestCase):
         try:
             from shutil import which as find_executable
         except ImportError:
-            from distutils.spawn import find_executable
+            from distutils.spawn import find_executable  # type: ignore
         pyline_bin = find_executable('pyline')
         self.assertTrue(pyline_bin)
         cmd = [pyline_bin, '--help']
@@ -479,7 +477,9 @@ class TestPylinePyline(SequenceTestCase, unittest.TestCase):
         iterable = ["one", "two"]
         outrable = ["eno", "owt"]
 
-        codefunc = lambda x: x['line'][::-1]
+        def codefunc(ctxt):
+            return ctxt['line'][::-1]
+
         output = pyline.pyline(iterable, codefunc=codefunc)
         self.assertTrue(isinstance(output, types.GeneratorType))
         output_list = [result.result for result in output]
@@ -490,9 +490,6 @@ class TestPylinePyline(SequenceTestCase, unittest.TestCase):
         self.assertTrue(isinstance(output2, types.GeneratorType))
         output_list2 = [result.result for result in output2]
         self.assertEqual(output_list2, outrable)  # ...
-
-
-import types
 
 
 class TestColspec(unittest.TestCase):
@@ -637,7 +634,11 @@ jinja2 = None
 class TestPylineJinja(unittest.TestCase):
     def setUp(self):
         global jinja2
-        import jinja2
+        if jinja2 is None:
+            try:
+                jinja2 = importlib.import_module('jinja2')
+            except ImportError:
+                self.skipTest('jinja2 is not installed')
 
     def test_pyline_jinja__mustspecifyargs_ValueError(self):
         iterable = TEST_INPUT_A0
@@ -649,7 +650,7 @@ class TestPylineJinja(unittest.TestCase):
     def test_pyline_jinja__TemplateNotFound(self):
         iterable = TEST_INPUT_A0
         results = []
-        with self.assertRaises(jinja2.TemplateNotFound):
+        with self.assertRaises(getattr(jinja2, 'TemplateNotFound')):
             pyline.main(
                 args=['-O', 'jinja:template=TemplateNotFound!.jinja'],
                 results=results,
@@ -1037,4 +1038,4 @@ class TestCoverageTargets(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    sys.exit(unittest.main())
+    unittest.main()

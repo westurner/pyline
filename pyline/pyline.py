@@ -76,6 +76,7 @@ __version__ = "0.3.21"
 import csv
 import collections
 import codecs
+import importlib
 import json
 import logging
 import textwrap
@@ -85,16 +86,21 @@ import shlex as _shlex
 import sys
 
 from collections import namedtuple
-from functools import partial
+from functools import partial  # noqa: F401
 from typing import Optional
 
 IS_PYTHON2 = sys.version_info.major == 2
 
-if sys.version_info.major >= 3:
-    xrange = range
-    basestring = str
-    unicode = str
+try:
     from html import escape as html_escape
+except ImportError:  # pragma: no cover
+    html_escape = importlib.import_module("cgi").escape
+
+xrange = globals().get("xrange", range)
+basestring = globals().get("basestring", str)
+unicode = globals().get("unicode", str)
+
+if sys.version_info.major >= 3:
 
     def itervalues(x):
         return x.values()
@@ -102,8 +108,6 @@ if sys.version_info.major >= 3:
     def iteritems(x):
         return x.items()
 else:  # pragma: no cover
-    from cgi import escape as html_escape
-
     def itervalues(x):
         return x.itervalues()
 
@@ -242,9 +246,9 @@ def pyline(
     regex_options=None,
     path_tools_pathpy: bool = False,
     path_tools_pathlib: bool = False,
-    shlex: bool = None,
+    shlex: Optional[bool] = None,
     read0: bool = False,
-    idelim: str = None,
+    idelim: Optional[str] = None,
     idelim_split_max: int = -1,
     odelim: str = "\t",
     **kwargs,
@@ -370,7 +374,7 @@ def pyline(
 
     global_ctxt = globals()
     for i, obj in enumerate(iterable):
-        l = line = o = obj
+        l = line = o = obj  # noqa: E741
         w = words = [_w for _w in splitfunc(line)]
         rgx = _rgx and _rgx.match(line) or None
 
@@ -394,7 +398,7 @@ def pyline(
                 ctxt.update(locals())
                 result = codefunc(ctxt)
         except Exception as e:
-            e.cmd = cmd
+            e.__dict__["cmd"] = cmd
             log.exception(repr(cmd))
             log.exception(e)
             raise
@@ -452,7 +456,7 @@ typestr_func_map = collections.OrderedDict(
 COLSPECSTRRGX = re.compile("""::""")
 
 
-def parse_colspecstr(colspecstr, default=unicode):
+def parse_colspecstr(colspecstr, default=None):
     """
 
     Args:
@@ -482,6 +486,9 @@ def parse_colspecstr(colspecstr, default=unicode):
         # - [ ] ENH: shlex quote parsing after the split
 
     """
+    if default is None:
+        default = unicode
+
     if not colspecstr or not colspecstr.strip():
         return
     # parse column::datatype mappings
@@ -527,9 +534,6 @@ def parse_field(colspecfieldstr, shlex=None):
             raise ValueError(colspecfieldstr)
     else:
         retval = colspecfieldstr
-    import pdb
-
-    pdb.set_trace()
     return retval
 
 
@@ -784,6 +788,7 @@ class ResultWriter(object):
     def __init__(self, _output, *args, **kwargs):
         self._output = _output
         self._conf = kwargs
+        self.output_func = self.write
         self.setup(_output, *args, **kwargs)
 
     def setup(self, *args, **kwargs):
@@ -967,9 +972,10 @@ class ResultWriter_jinja(ResultWriter):
     def setup(self, *args, **kwargs):
         log.debug(("args", args))
         log.debug(("kwargs", kwargs))
-        import jinja2
-        import markupsafe
-        import os
+
+        import os.path
+        jinja2 = importlib.import_module("jinja2")
+        markupsafe = importlib.import_module("markupsafe")
 
         self.escape_func = markupsafe.escape
         templatepath = kwargs.get("template", kwargs.get("tmpl"))
@@ -1214,7 +1220,7 @@ def get_sort_function(**kwargs):  # (sort_asc, sort_desc)
     """
     sortstr = kwargs.get("sortstr")
     sortfunc = None
-    reverse = None
+    reverse = False
     col_map = kwargs.get("col_map")
     sort_asc = kwargs.get("sort_asc")
     sort_desc = kwargs.get("sort_desc")
@@ -1285,7 +1291,9 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
         raise ValueError(opts)
     if not optsdict:
         optsdict = {}
-    opts = optsdict
+    opts = {}
+    for key, value in optsdict.items():
+        opts[str(key)] = value
 
     log = logging.getLogger(DEFAULT_LOGGER)
 
@@ -1323,9 +1331,10 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
         cmd = " ".join(args)
         if not cmd.strip():
             if opts.get("regex"):
-                if opts.get("_output_format") == "json" and "<" in opts.get(
-                    "regex"
-                ):  # TODO:
+                regex_value = opts.get("regex") or ""
+                if isinstance(regex_value, bytes):
+                    regex_value = regex_value.decode("utf8", "ignore")
+                if opts.get("_output_format") == "json" and "<" in regex_value:  # TODO:
                     cmd = "rgx and rgx.groupdict()"
                 else:
                     cmd = "rgx and rgx.groups()"
@@ -1354,7 +1363,7 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
                     opts["_file"] = open(opts["file"], "r", encoding="utf8")
 
             if opts.get("read0"):
-                opts["_file"] = open(opts["file"], "rb", encoding="utf8")
+                raise ValueError("read0 is not currently supported")
 
         if output is not None:
             opts["_output"] = output
