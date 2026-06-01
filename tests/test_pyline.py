@@ -868,8 +868,10 @@ class TestCoverageTargets(unittest.TestCase):
             src_path = tf.name
         out_path = src_path + '.out'
         try:
-            with self.assertRaises(ValueError):
-                pyline.main(args=['-f', src_path, '--read0', 'line'], output=io.StringIO())
+            read0_out = io.StringIO()
+            read0_ret, _ = pyline.main(args=['-f', src_path, '--read0', 'line'], output=read0_out)
+            self.assertEqual(0, read0_ret)
+            self.assertEqual(['x', 'y'], read0_out.getvalue().splitlines())
 
             ret, _ = pyline.main(
                 args=['-f', src_path, '-o', out_path, 'line'],

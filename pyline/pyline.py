@@ -1346,24 +1346,53 @@ def main(args=None, iterable=None, output=None, results=None, opts=None):
     # opts['attrs'] = PylineResult._fields # XX
     opts["attrs"] = list(opts["col_map"].keys()) if "col_map" in opts else None
 
+    def _decode_read0_records(raw_data):
+        if isinstance(raw_data, bytes):
+            parts = raw_data.split(b"\0")
+            if parts and parts[-1] == b"":
+                parts = parts[:-1]
+            return [part.decode("utf8") for part in parts]
+        parts = raw_data.split("\0")
+        if parts and parts[-1] == "":
+            parts = parts[:-1]
+        return parts
+
     try:
         if iterable is not None:
-            opts["_file"] = iterable
+            if opts.get("read0"):
+                if hasattr(iterable, "read"):
+                    raw_data = iterable.read()
+                elif isinstance(iterable, (bytes, str)):
+                    raw_data = iterable
+                else:
+                    raw_data = "".join(iterable)
+                opts["_file"] = _decode_read0_records(raw_data)
+            else:
+                opts["_file"] = iterable
         else:
             if opts.get("file") == "-":
                 # opts._file = sys.stdin
-                if IS_PYTHON2:  # pragma: no cover
-                    opts["_file"] = codecs.getreader("utf8")(sys.stdin)
+                if opts.get("read0"):
+                    if IS_PYTHON2:  # pragma: no cover
+                        raw_data = codecs.getreader("utf8")(sys.stdin).read()
+                    else:
+                        raw_data = getattr(sys.stdin, "buffer", sys.stdin).read()
+                    opts["_file"] = _decode_read0_records(raw_data)
                 else:
-                    opts["_file"] = sys.stdin
+                    if IS_PYTHON2:  # pragma: no cover
+                        opts["_file"] = codecs.getreader("utf8")(sys.stdin)
+                    else:
+                        opts["_file"] = sys.stdin
             else:
-                if IS_PYTHON2:  # pragma: no cover
-                    opts["_file"] = codecs.open(opts["file"], "r", encoding="utf8")
+                if opts.get("read0"):
+                    with open(opts["file"], "rb") as _file:
+                        raw_data = _file.read()
+                    opts["_file"] = _decode_read0_records(raw_data)
                 else:
-                    opts["_file"] = open(opts["file"], "r", encoding="utf8")
-
-            if opts.get("read0"):
-                raise ValueError("read0 is not currently supported")
+                    if IS_PYTHON2:  # pragma: no cover
+                        opts["_file"] = codecs.open(opts["file"], "r", encoding="utf8")
+                    else:
+                        opts["_file"] = open(opts["file"], "r", encoding="utf8")
 
         if output is not None:
             opts["_output"] = output
